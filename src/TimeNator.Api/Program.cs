@@ -1,7 +1,13 @@
 using Microsoft.EntityFrameworkCore;
+using Serilog;
+using TimeNator.Api;
 using TimeNator.Api.Data;
 
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Host.UseSerilog((context, logger) => logger
+    .ReadFrom.Configuration(context.Configuration)
+    .WriteTo.Console());
 
 var connectionString = builder.Configuration.GetConnectionString("Postgres")
                        ?? throw new InvalidOperationException(
@@ -10,13 +16,19 @@ var connectionString = builder.Configuration.GetConnectionString("Postgres")
 
 builder.Services.AddDbContext<AppDbContext>(options => options.UseNpgsql(connectionString));
 
+builder.Services.AddHealthChecks().AddDbContextCheck<AppDbContext>("database");
+
 builder.Services.AddControllers();
 
 var app = builder.Build();
 
+app.UseSerilogRequestLogging();
+
 app.UseHttpsRedirection();
 
 app.UseAuthorization();
+
+app.MapHealthChecks("/health", new() { ResponseWriter = HealthResponse.WriteAsync });
 
 app.MapControllers();
 
