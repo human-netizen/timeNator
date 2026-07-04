@@ -1,0 +1,6 @@
+@TimeNator.Api_HostAddress = http://localhost:5162
+
+GET {{TimeNator.Api_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
