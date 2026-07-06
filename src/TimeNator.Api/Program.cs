@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Serilog;
 using TimeNator.Api;
 using TimeNator.Api.Data;
+using TimeNator.Api.Entities;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -15,6 +16,13 @@ var connectionString = builder.Configuration.GetConnectionString("Postgres")
                            + "dotnet user-secrets set \"ConnectionStrings:Postgres\" \"<value>\"");
 
 builder.Services.AddDbContext<AppDbContext>(options => options.UseNpgsql(connectionString));
+
+builder.Services.AddIdentityCore<ApplicationUser>(options =>
+    {
+        options.User.RequireUniqueEmail = true;
+        options.Password.RequireNonAlphanumeric = false;
+    })
+    .AddEntityFrameworkStores<AppDbContext>();
 
 builder.Services.AddHealthChecks().AddDbContextCheck<AppDbContext>("database");
 
