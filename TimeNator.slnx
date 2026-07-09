@@ -1,4 +1,7 @@
 <Solution>
+  <Folder Name="/tests/">
+    <Project Path="tests/TimeNator.Api.Tests/TimeNator.Api.Tests.csproj" />
+  </Folder>
   <Project Path="src/TimeNator.Api/TimeNator.Api.csproj" />
   <Project Path="src/TimeNator.Desktop/TimeNator.Desktop.csproj" />
   <Project Path="src/TimeNator.Shared/TimeNator.Shared.csproj" />
