@@ -4,11 +4,13 @@
         x:Class="TimeNator.Desktop.Views.MainWindow"
         x:DataType="vm:MainWindowViewModel"
         Icon="/Assets/avalonia-logo.ico"
-        Width="900" Height="600"
+        Width="1000" Height="680" MinWidth="720" MinHeight="480"
         Title="TimeNator">
 
-    <TextBlock Text="{Binding HealthText}"
-               HorizontalAlignment="Center"
-               VerticalAlignment="Center" />
+    <Panel>
+        <TextBlock Text="{Binding StatusText}" HorizontalAlignment="Center" VerticalAlignment="Center"
+                   IsVisible="{Binding Navigator.Current, Converter={x:Static ObjectConverters.IsNull}}" />
+        <ContentControl Content="{Binding Navigator.Current}" />
+    </Panel>
 
 </Window>

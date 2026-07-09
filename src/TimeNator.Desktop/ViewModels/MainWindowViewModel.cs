@@ -4,21 +4,18 @@ using TimeNator.Desktop.Services;
 
 namespace TimeNator.Desktop.ViewModels;
 
-public partial class MainWindowViewModel(IApiClient api) : ViewModelBase
+public partial class MainWindowViewModel(Navigator navigator, IAuthService auth) : ViewModelBase
 {
-    [ObservableProperty] public partial string HealthText { get; set; } = "Checking API...";
+    public Navigator Navigator { get; } = navigator;
+
+    [ObservableProperty] public partial string StatusText { get; set; } = "Connecting...";
 
     [RelayCommand]
     private async Task LoadAsync()
     {
-        try
-        {
-            var health = await api.GetHealthAsync();
-            HealthText = $"API {health.Status}, database {health.Checks.GetValueOrDefault("database", "unknown")}";
-        }
-        catch (HttpRequestException ex)
-        {
-            HealthText = $"API unreachable: {ex.Message}";
-        }
+        if (await auth.TryRestoreAsync())
+            Navigator.GoTo<ShellViewModel>();
+        else
+            Navigator.GoTo<LoginViewModel>();
     }
 }

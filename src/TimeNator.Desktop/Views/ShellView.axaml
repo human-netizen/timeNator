@@ -1,0 +1,17 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:TimeNator.Desktop.ViewModels"
+             x:Class="TimeNator.Desktop.Views.ShellView"
+             x:DataType="vm:ShellViewModel">
+
+    <DockPanel>
+        <Border DockPanel.Dock="Top" Padding="16,10">
+            <DockPanel>
+                <Button DockPanel.Dock="Right" Content="Log out" Command="{Binding LogoutCommand}" />
+                <TextBlock Text="{Binding DisplayName}" VerticalAlignment="Center" FontWeight="SemiBold" />
+            </DockPanel>
+        </Border>
+        <TextBlock Text="Signed in." HorizontalAlignment="Center" VerticalAlignment="Center" />
+    </DockPanel>
+
+</UserControl>
