@@ -13,6 +13,7 @@
         </Border>
         <TabControl Padding="0">
             <TabItem Header="Timer" Content="{Binding Timer}" />
+            <TabItem Header="History" Content="{Binding History}" />
             <TabItem Header="Subjects" Content="{Binding Subjects}" />
         </TabControl>
     </DockPanel>

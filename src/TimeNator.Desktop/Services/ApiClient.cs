@@ -3,7 +3,11 @@ using TimeNator.Shared.Dtos;
 
 namespace TimeNator.Desktop.Services;
 
-public class ApiException(string message) : Exception(message);
+/// <summary>A failed API call. <see cref="StatusCode"/> is null when the server could not be reached.</summary>
+public class ApiException(string message, int? statusCode) : Exception(message)
+{
+    public int? StatusCode { get; } = statusCode;
+}
 
 public class ApiClient(HttpClient http) : IApiClient
 {
@@ -42,7 +46,7 @@ public class ApiClient(HttpClient http) : IApiClient
     {
         using var response = await SendAsync(method, path, body, cancellationToken);
         return await response.Content.ReadFromJsonAsync<T>(cancellationToken)
-               ?? throw new ApiException("The server returned an empty response.");
+               ?? throw new ApiException("The server returned an empty response.", (int)response.StatusCode);
     }
 
     private async Task<HttpResponseMessage> SendAsync(HttpMethod method, string path, object? body,
@@ -59,13 +63,14 @@ public class ApiClient(HttpClient http) : IApiClient
         }
         catch (HttpRequestException)
         {
-            throw new ApiException("The server could not be reached.");
+            throw new ApiException("The server could not be reached.", null);
         }
 
         if (response.IsSuccessStatusCode)
             return response;
 
         using (response)
-            throw new ApiException(await ProblemReader.ReadMessageAsync(response, cancellationToken));
+            throw new ApiException(await ProblemReader.ReadMessageAsync(response, cancellationToken),
+                (int)response.StatusCode);
     }
 }

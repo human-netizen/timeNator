@@ -11,18 +11,29 @@ public record SessionCreateResult(SessionResponse? Session, List<RuleViolation> 
 public class SessionService(AppDbContext db, TimeProvider clock)
 {
     public Task<List<SessionResponse>> ListAsync(
-        Guid userId, DateTimeOffset from, DateTimeOffset to, CancellationToken cancellationToken) =>
-        db.StudySessions
+        Guid userId, DateTimeOffset from, DateTimeOffset to, CancellationToken cancellationToken)
+    {
+        // Npgsql only writes UTC to timestamptz, so normalise whatever offset the client sent.
+        from = from.ToUniversalTime();
+        to = to.ToUniversalTime();
+        return db.StudySessions
             .Where(s => s.UserId == userId && s.StartedAt >= from && s.StartedAt < to)
             .OrderByDescending(s => s.StartedAt)
             .Select(s => new SessionResponse(
                 s.Id, s.SubjectId, s.Subject.Name, s.Subject.ColorHex, s.StartedAt, s.EndedAt,
                 s.DurationSeconds, s.PausedSeconds, s.Mode, s.Source, s.MaxStreakSeconds))
             .ToListAsync(cancellationToken);
+    }
 
     public async Task<SessionCreateResult> CreateAsync(
         Guid userId, CreateSessionRequest request, CancellationToken cancellationToken)
     {
+        request = request with
+        {
+            StartedAt = request.StartedAt.ToUniversalTime(),
+            EndedAt = request.EndedAt.ToUniversalTime()
+        };
+
         var subject = await db.Subjects
             .SingleOrDefaultAsync(s => s.Id == request.SubjectId && s.UserId == userId, cancellationToken);
         if (subject is null)
@@ -45,8 +56,8 @@ public class SessionService(AppDbContext db, TimeProvider clock)
         {
             UserId = userId,
             SubjectId = subject.Id,
-            StartedAt = request.StartedAt.ToUniversalTime(),
-            EndedAt = request.EndedAt.ToUniversalTime(),
+            StartedAt = request.StartedAt,
+            EndedAt = request.EndedAt,
             DurationSeconds = request.DurationSeconds,
             PausedSeconds = request.PausedSeconds,
             Mode = request.Mode,

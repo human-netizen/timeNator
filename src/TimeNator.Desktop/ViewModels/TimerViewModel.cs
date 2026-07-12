@@ -11,16 +11,31 @@ namespace TimeNator.Desktop.ViewModels;
 
 public partial class TimerViewModel : ViewModelBase
 {
-    private readonly IApiClient _api;
+    private static readonly TimeSpan JournalInterval = TimeSpan.FromSeconds(30);
+
+    private readonly SessionJournal _journal;
+    private readonly SessionUploader _uploader;
+    private readonly TimeProvider _clock;
     private readonly StudyTimer _timer;
     private readonly DispatcherTimer _tick;
+    private DateTimeOffset _lastJournaled;
 
-    public TimerViewModel(IApiClient api, SubjectCatalog catalog, TimeProvider clock)
+    public TimerViewModel(SubjectCatalog catalog, SessionJournal journal, SessionUploader uploader,
+        TimeProvider clock)
     {
-        _api = api;
+        _journal = journal;
+        _uploader = uploader;
+        _clock = clock;
         _timer = new StudyTimer(clock);
         Subjects = catalog.Subjects;
-        _tick = new DispatcherTimer(TimeSpan.FromMilliseconds(250), DispatcherPriority.Normal, (_, _) => Refresh());
+        _tick = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(250) };
+        _tick.Tick += (_, _) => OnTick();
+        _uploader.Uploaded += (request, fromRetry) =>
+        {
+            if (fromRetry)
+                Dispatcher.UIThread.Post(() => Message =
+                    $"Uploaded a queued session of {Format(TimeSpan.FromSeconds(request.DurationSeconds))}.");
+        };
     }
 
     public ObservableCollection<SubjectResponse> Subjects { get; }
@@ -33,6 +48,13 @@ public partial class TimerViewModel : ViewModelBase
     [ObservableProperty] public partial string? Message { get; set; }
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasRecovered))]
+    [NotifyCanExecuteChangedFor(nameof(StartCommand))]
+    public partial ActiveSession? Recovered { get; private set; }
+
+    public bool HasRecovered => Recovered is not null;
+
+    [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(IsIdle), nameof(IsRunning), nameof(IsPaused))]
     [NotifyCanExecuteChangedFor(nameof(StartCommand), nameof(StopCommand))]
     public partial TimerState State { get; private set; }
@@ -41,21 +63,55 @@ public partial class TimerViewModel : ViewModelBase
     public bool IsRunning => State == TimerState.Running;
     public bool IsPaused => State == TimerState.Paused;
 
+    public override Task ActivateAsync()
+    {
+        _uploader.ResumePending();
+        var active = _journal.Read().Active;
+        if (active is not null)
+        {
+            Recovered = active;
+            var timing = active.Timer.FinishAt(active.LastSeenAt);
+            Message = $"An unfinished {active.SubjectName} session of " +
+                      $"{Format(TimeSpan.FromSeconds(timing.DurationSeconds))} was recovered.";
+        }
+        return Task.CompletedTask;
+    }
+
+    [RelayCommand]
+    private async Task SaveRecoveredAsync()
+    {
+        if (Recovered is not { } active)
+            return;
+        Recovered = null;
+        var timing = active.Timer.FinishAt(active.LastSeenAt);
+        await SubmitAsync(active.SubjectId, active.SubjectName, active.Mode, timing);
+    }
+
+    [RelayCommand]
+    private void DiscardRecovered()
+    {
+        Recovered = null;
+        _journal.SetActive(null);
+        Message = "Recovered session discarded.";
+    }
+
     [RelayCommand(CanExecute = nameof(CanStart))]
     private void Start()
     {
         _timer.Start();
         _tick.Start();
         Message = null;
+        Journal();
         Refresh();
     }
 
-    private bool CanStart() => State == TimerState.Idle && SelectedSubject is not null;
+    private bool CanStart() => State == TimerState.Idle && SelectedSubject is not null && Recovered is null;
 
     [RelayCommand]
     private void Pause()
     {
         _timer.Pause();
+        Journal();
         Refresh();
     }
 
@@ -63,6 +119,7 @@ public partial class TimerViewModel : ViewModelBase
     private void Resume()
     {
         _timer.Resume();
+        Journal();
         Refresh();
     }
 
@@ -73,27 +130,51 @@ public partial class TimerViewModel : ViewModelBase
         var timing = _timer.Stop();
         _tick.Stop();
         Refresh();
+        await SubmitAsync(subject.Id, subject.Name, SessionMode.Stopwatch, timing);
+    }
 
+    private bool CanStop() => State != TimerState.Idle;
+
+    private async Task SubmitAsync(Guid subjectId, string subjectName, SessionMode mode, CompletedTiming timing)
+    {
         if (timing.DurationSeconds < 1)
         {
+            _journal.SetActive(null);
             Message = "Session too short to save.";
             return;
         }
 
-        try
+        var request = new CreateSessionRequest(subjectId, timing.StartedAt, timing.EndedAt,
+            timing.DurationSeconds, timing.PausedSeconds, mode, SessionSource.Timer, timing.DurationSeconds);
+
+        // SubmitAsync journals the finished session before its first await, so clearing
+        // the active entry afterwards never leaves a window where the session is on disk nowhere.
+        var submit = _uploader.SubmitAsync(request);
+        _journal.SetActive(null);
+        var (outcome, error) = await submit;
+
+        var length = Format(TimeSpan.FromSeconds(timing.DurationSeconds));
+        Message = outcome switch
         {
-            await _api.CreateSessionAsync(new CreateSessionRequest(
-                subject.Id, timing.StartedAt, timing.EndedAt, timing.DurationSeconds, timing.PausedSeconds,
-                SessionMode.Stopwatch, SessionSource.Timer, timing.DurationSeconds));
-            Message = $"Saved {Format(TimeSpan.FromSeconds(timing.DurationSeconds))} of {subject.Name}.";
-        }
-        catch (ApiException ex)
-        {
-            Message = ex.Message;
-        }
+            UploadOutcome.Saved => $"Saved {length} of {subjectName}.",
+            UploadOutcome.Queued => $"Server unreachable. {length} of {subjectName} will upload when it is back.",
+            _ => $"The session was rejected: {error}"
+        };
     }
 
-    private bool CanStop() => State != TimerState.Idle;
+    private void OnTick()
+    {
+        if (_clock.GetUtcNow() - _lastJournaled >= JournalInterval)
+            Journal();
+        Refresh();
+    }
+
+    private void Journal()
+    {
+        _lastJournaled = _clock.GetUtcNow();
+        _journal.SetActive(new ActiveSession(SelectedSubject!.Id, SelectedSubject.Name, SessionMode.Stopwatch,
+            _timer.Snapshot(), _lastJournaled));
+    }
 
     private void Refresh()
     {

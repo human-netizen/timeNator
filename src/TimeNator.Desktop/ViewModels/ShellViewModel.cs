@@ -7,14 +7,21 @@ public partial class ShellViewModel(
     IAuthService auth,
     INavigator navigator,
     TimerViewModel timer,
-    SubjectsViewModel subjects) : ViewModelBase
+    SubjectsViewModel subjects,
+    HistoryViewModel history) : ViewModelBase
 {
     public string DisplayName => auth.DisplayName ?? "";
 
     public TimerViewModel Timer { get; } = timer;
     public SubjectsViewModel Subjects { get; } = subjects;
+    public HistoryViewModel History { get; } = history;
 
-    public override Task ActivateAsync() => Subjects.LoadCommand.ExecuteAsync(null);
+    public override async Task ActivateAsync()
+    {
+        await Timer.ActivateAsync();
+        await Subjects.LoadCommand.ExecuteAsync(null);
+        await History.LoadCommand.ExecuteAsync(null);
+    }
 
     [RelayCommand]
     private async Task LogoutAsync()

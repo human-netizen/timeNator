@@ -9,6 +9,25 @@ public enum TimerState
 
 public record CompletedTiming(DateTimeOffset StartedAt, DateTimeOffset EndedAt, int DurationSeconds, int PausedSeconds);
 
+/// <summary>Everything needed to rebuild a started timer, for example after a crash.</summary>
+public record TimerSnapshot(
+    DateTimeOffset StartedAt,
+    TimerState State,
+    TimeSpan RunningBefore,
+    TimeSpan PausedBefore,
+    DateTimeOffset StateSince)
+{
+    /// <summary>Closes the session at <paramref name="endedAt"/>, crediting the current state up to then.</summary>
+    public CompletedTiming FinishAt(DateTimeOffset endedAt)
+    {
+        var inState = endedAt > StateSince ? endedAt - StateSince : TimeSpan.Zero;
+        var running = RunningBefore + (State == TimerState.Running ? inState : TimeSpan.Zero);
+        var duration = (int)Math.Round(running.TotalSeconds);
+        var total = (int)Math.Round((endedAt - StartedAt).TotalSeconds);
+        return new CompletedTiming(StartedAt, endedAt, duration, Math.Max(0, total - duration));
+    }
+}
+
 /// <summary>
 /// The client-side clock for one session. Tracks running and paused time separately
 /// from wall-clock timestamps, so the result satisfies end = start + duration + paused.
@@ -54,19 +73,17 @@ public class StudyTimer(TimeProvider clock)
 
     public CompletedTiming Stop()
     {
-        if (State == TimerState.Idle)
-            throw new InvalidOperationException("The timer is not running.");
-
-        var endedAt = clock.GetUtcNow();
-        var duration = (int)Math.Round(Elapsed.TotalSeconds);
-        var paused = (int)Math.Round((endedAt - StartedAt!.Value).TotalSeconds) - duration;
-        var result = new CompletedTiming(StartedAt.Value, endedAt, duration, Math.Max(0, paused));
-
+        var result = Snapshot().FinishAt(clock.GetUtcNow());
         State = TimerState.Idle;
         StartedAt = null;
         _runningBefore = _pausedBefore = TimeSpan.Zero;
         return result;
     }
+
+    public TimerSnapshot Snapshot() =>
+        State == TimerState.Idle
+            ? throw new InvalidOperationException("The timer is not running.")
+            : new TimerSnapshot(StartedAt!.Value, State, _runningBefore, _pausedBefore, _stateSince);
 
     private TimeSpan Since() => clock.GetUtcNow() - _stateSince;
 }

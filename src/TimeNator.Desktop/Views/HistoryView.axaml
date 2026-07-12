@@ -1,0 +1,48 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:TimeNator.Desktop.ViewModels"
+             xmlns:conv="using:TimeNator.Desktop.Converters"
+             x:Class="TimeNator.Desktop.Views.HistoryView"
+             x:DataType="vm:HistoryViewModel">
+
+    <ScrollViewer>
+        <StackPanel Margin="24" Spacing="18" Width="560" HorizontalAlignment="Left">
+            <TextBlock Text="History" FontSize="22" FontWeight="SemiBold" />
+            <TextBlock Text="{Binding Error}" Foreground="IndianRed"
+                       IsVisible="{Binding Error, Converter={x:Static ObjectConverters.IsNotNull}}" />
+            <TextBlock Text="No sessions yet." Opacity="0.6"
+                       IsVisible="{Binding !Days.Count}" />
+
+            <ItemsControl ItemsSource="{Binding Days}">
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate x:DataType="vm:HistoryDay">
+                        <StackPanel Spacing="6" Margin="0,0,0,18">
+                            <DockPanel>
+                                <TextBlock DockPanel.Dock="Right" Text="{Binding Total}" FontWeight="SemiBold" />
+                                <TextBlock Text="{Binding Title}" FontWeight="SemiBold" FontSize="15" />
+                            </DockPanel>
+                            <ItemsControl ItemsSource="{Binding Sessions}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate x:DataType="vm:HistoryItem">
+                                        <DockPanel Margin="0,3">
+                                            <TextBlock DockPanel.Dock="Right" Text="{Binding Duration}" />
+                                            <Ellipse Width="10" Height="10" Margin="0,0,10,0"
+                                                     Fill="{Binding ColorHex, Converter={x:Static conv:HexToBrushConverter.Instance}}" />
+                                            <TextBlock Text="{Binding TimeRange}" Width="120" Opacity="0.7" />
+                                            <TextBlock Text="{Binding Note}" DockPanel.Dock="Right" Opacity="0.5"
+                                                       Margin="0,0,16,0" />
+                                            <TextBlock Text="{Binding SubjectName}" />
+                                        </DockPanel>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </StackPanel>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+
+            <Button Content="Load older" Command="{Binding LoadOlderCommand}" />
+        </StackPanel>
+    </ScrollViewer>
+
+</UserControl>

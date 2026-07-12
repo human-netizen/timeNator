@@ -62,6 +62,22 @@ public class StudyTimerTests
     }
 
     [Fact]
+    public void Snapshot_finishes_at_the_last_seen_time()
+    {
+        var timer = new StudyTimer(_clock);
+        timer.Start();
+        _clock.Advance(TimeSpan.FromMinutes(20));
+        var snapshot = timer.Snapshot();
+        var lastSeen = _clock.GetUtcNow().AddMinutes(5);
+
+        var result = snapshot.FinishAt(lastSeen);
+
+        Assert.Equal(25 * 60, result.DurationSeconds);
+        Assert.Equal(0, result.PausedSeconds);
+        Assert.Equal(lastSeen, result.EndedAt);
+    }
+
+    [Fact]
     public void Starting_twice_throws()
     {
         var timer = new StudyTimer(_clock);

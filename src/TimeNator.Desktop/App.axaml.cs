@@ -1,6 +1,7 @@
 using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
+using Avalonia.Threading;
 using Microsoft.Extensions.DependencyInjection;
 using TimeNator.Desktop.Services;
 using TimeNator.Desktop.ViewModels;
@@ -40,14 +41,18 @@ public partial class App : Application
         services.AddTransient<ShellViewModel>();
         services.AddTransient<SubjectsViewModel>();
         services.AddTransient<TimerViewModel>();
+        services.AddTransient<HistoryViewModel>();
         services.AddSingleton<SubjectCatalog>();
+        services.AddSingleton<SessionJournal>();
+        services.AddSingleton<SessionUploader>();
         var provider = services.BuildServiceProvider();
 
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
             var viewModel = provider.GetRequiredService<MainWindowViewModel>();
             desktop.MainWindow = new MainWindow { DataContext = viewModel };
-            _ = viewModel.LoadCommand.ExecuteAsync(null);
+            // Posted so it runs inside the UI loop, where awaits resume on the UI thread.
+            Dispatcher.UIThread.Post(() => viewModel.LoadCommand.Execute(null));
         }
 
         base.OnFrameworkInitializationCompleted();

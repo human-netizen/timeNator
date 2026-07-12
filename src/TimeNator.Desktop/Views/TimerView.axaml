@@ -35,6 +35,12 @@
         </StackPanel>
 
         <TextBlock Text="{Binding Message}" HorizontalAlignment="Center" TextWrapping="Wrap" Opacity="0.8" />
+
+        <StackPanel Orientation="Horizontal" Spacing="10" HorizontalAlignment="Center"
+                    IsVisible="{Binding HasRecovered}">
+            <Button Content="Save it" Command="{Binding SaveRecoveredCommand}" />
+            <Button Content="Discard" Command="{Binding DiscardRecoveredCommand}" />
+        </StackPanel>
     </StackPanel>
 
 </UserControl>
