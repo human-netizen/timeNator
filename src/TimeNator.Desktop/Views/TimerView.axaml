@@ -1,0 +1,40 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:TimeNator.Desktop.ViewModels"
+             xmlns:dto="using:TimeNator.Shared.Dtos"
+             xmlns:conv="using:TimeNator.Desktop.Converters"
+             x:Class="TimeNator.Desktop.Views.TimerView"
+             x:DataType="vm:TimerViewModel">
+
+    <StackPanel Spacing="18" HorizontalAlignment="Center" VerticalAlignment="Center" Width="360">
+        <ComboBox ItemsSource="{Binding Subjects}" SelectedItem="{Binding SelectedSubject}"
+                  PlaceholderText="Choose a subject" HorizontalAlignment="Stretch"
+                  IsEnabled="{Binding IsIdle}">
+            <ComboBox.ItemTemplate>
+                <DataTemplate x:DataType="dto:SubjectResponse">
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <Ellipse Width="12" Height="12"
+                                 Fill="{Binding ColorHex, Converter={x:Static conv:HexToBrushConverter.Instance}}" />
+                        <TextBlock Text="{Binding Name}" />
+                    </StackPanel>
+                </DataTemplate>
+            </ComboBox.ItemTemplate>
+        </ComboBox>
+
+        <TextBlock Text="{Binding ElapsedText}" FontSize="64" FontWeight="Light" HorizontalAlignment="Center" />
+
+        <StackPanel Orientation="Horizontal" Spacing="10" HorizontalAlignment="Center">
+            <Button Content="Start" Command="{Binding StartCommand}" IsVisible="{Binding IsIdle}"
+                    MinWidth="90" HorizontalContentAlignment="Center" />
+            <Button Content="Pause" Command="{Binding PauseCommand}" IsVisible="{Binding IsRunning}"
+                    MinWidth="90" HorizontalContentAlignment="Center" />
+            <Button Content="Resume" Command="{Binding ResumeCommand}" IsVisible="{Binding IsPaused}"
+                    MinWidth="90" HorizontalContentAlignment="Center" />
+            <Button Content="Stop" Command="{Binding StopCommand}" IsVisible="{Binding !IsIdle}"
+                    MinWidth="90" HorizontalContentAlignment="Center" />
+        </StackPanel>
+
+        <TextBlock Text="{Binding Message}" HorizontalAlignment="Center" TextWrapping="Wrap" Opacity="0.8" />
+    </StackPanel>
+
+</UserControl>

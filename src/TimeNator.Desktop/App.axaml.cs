@@ -38,6 +38,9 @@ public partial class App : Application
         services.AddTransient<MainWindowViewModel>();
         services.AddTransient<LoginViewModel>();
         services.AddTransient<ShellViewModel>();
+        services.AddTransient<SubjectsViewModel>();
+        services.AddTransient<TimerViewModel>();
+        services.AddSingleton<SubjectCatalog>();
         var provider = services.BuildServiceProvider();
 
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)

@@ -11,7 +11,10 @@
                 <TextBlock Text="{Binding DisplayName}" VerticalAlignment="Center" FontWeight="SemiBold" />
             </DockPanel>
         </Border>
-        <TextBlock Text="Signed in." HorizontalAlignment="Center" VerticalAlignment="Center" />
+        <TabControl Padding="0">
+            <TabItem Header="Timer" Content="{Binding Timer}" />
+            <TabItem Header="Subjects" Content="{Binding Subjects}" />
+        </TabControl>
     </DockPanel>
 
 </UserControl>

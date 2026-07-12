@@ -18,6 +18,8 @@ public partial class Navigator(IServiceProvider services) : ObservableObject, IN
     public void GoTo<T>() where T : ViewModelBase
     {
         (Current as IDisposable)?.Dispose();
-        Current = services.GetRequiredService<T>();
+        var next = services.GetRequiredService<T>();
+        Current = next;
+        _ = next.ActivateAsync();
     }
 }
