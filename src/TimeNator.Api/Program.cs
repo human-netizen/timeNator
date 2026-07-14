@@ -78,3 +78,5 @@ app.MapHealthChecks("/health", new() { ResponseWriter = HealthResponse.WriteAsyn
 app.MapControllers();
 
 app.Run();
+
+public partial class Program;
