@@ -15,6 +15,7 @@
             <TabItem Header="Timer" Content="{Binding Timer}" />
             <TabItem Header="History" Content="{Binding History}" />
             <TabItem Header="Subjects" Content="{Binding Subjects}" />
+            <TabItem Header="Settings" Content="{Binding Settings}" />
         </TabControl>
     </DockPanel>
 

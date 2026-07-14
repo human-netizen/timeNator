@@ -78,6 +78,19 @@ public class StudyTimerTests
     }
 
     [Fact]
+    public void Backdated_pause_moves_idle_time_to_paused()
+    {
+        var timer = new StudyTimer(_clock);
+        timer.Start();
+        _clock.Advance(TimeSpan.FromMinutes(30));
+
+        timer.Pause(_clock.GetUtcNow().AddMinutes(-5));
+
+        Assert.Equal(TimeSpan.FromMinutes(25), timer.Elapsed);
+        Assert.Equal(TimeSpan.FromMinutes(5), timer.Paused);
+    }
+
+    [Fact]
     public void Starting_twice_throws()
     {
         var timer = new StudyTimer(_clock);

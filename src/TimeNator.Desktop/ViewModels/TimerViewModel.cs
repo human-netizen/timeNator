@@ -2,6 +2,7 @@ using System.Collections.ObjectModel;
 using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using TimeNator.Desktop.Interop;
 using TimeNator.Desktop.Models;
 using TimeNator.Desktop.Services;
 using TimeNator.Shared;
@@ -15,17 +16,21 @@ public partial class TimerViewModel : ViewModelBase
 
     private readonly SessionJournal _journal;
     private readonly SessionUploader _uploader;
+    private readonly IIdleDetector _idle;
+    private readonly SettingsStore _settings;
     private readonly TimeProvider _clock;
     private readonly StudyTimer _timer;
     private readonly DispatcherTimer _tick;
     private DateTimeOffset _lastJournaled;
 
     public TimerViewModel(SubjectCatalog catalog, SessionJournal journal, SessionUploader uploader,
-        TimeProvider clock)
+        IIdleDetector idle, SettingsStore settings, TimeProvider clock)
     {
         _journal = journal;
         _uploader = uploader;
         _clock = clock;
+        _idle = idle;
+        _settings = settings;
         _timer = new StudyTimer(clock);
         Subjects = catalog.Subjects;
         _tick = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(250) };
@@ -164,6 +169,15 @@ public partial class TimerViewModel : ViewModelBase
 
     private void OnTick()
     {
+        var idle = _idle.GetIdleTime();
+        if (_timer.State == TimerState.Running && idle >= TimeSpan.FromMinutes(_settings.Current.IdleThresholdMinutes))
+        {
+            // Backdate the pause to the last input, so the idle minutes never count as study.
+            _timer.Pause(_clock.GetUtcNow() - idle);
+            Journal();
+            Message = $"Paused after {(int)idle.TotalMinutes} min without input.";
+        }
+
         if (_clock.GetUtcNow() - _lastJournaled >= JournalInterval)
             Journal();
         Refresh();

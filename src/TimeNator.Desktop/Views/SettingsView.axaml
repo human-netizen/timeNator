@@ -1,0 +1,19 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:TimeNator.Desktop.ViewModels"
+             x:Class="TimeNator.Desktop.Views.SettingsView"
+             x:DataType="vm:SettingsViewModel">
+
+    <ScrollViewer>
+        <StackPanel Margin="24" Spacing="16" Width="480" HorizontalAlignment="Left">
+            <TextBlock Text="Settings" FontSize="22" FontWeight="SemiBold" />
+
+            <StackPanel Spacing="6">
+                <TextBlock Text="Pause the timer after this many idle minutes" />
+                <NumericUpDown Value="{Binding IdleThresholdMinutes}" Minimum="1" Maximum="120" Increment="1"
+                               FormatString="0" Width="140" HorizontalAlignment="Left" />
+            </StackPanel>
+        </StackPanel>
+    </ScrollViewer>
+
+</UserControl>

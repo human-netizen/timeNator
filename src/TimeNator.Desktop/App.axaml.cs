@@ -3,6 +3,7 @@ using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
 using Avalonia.Threading;
 using Microsoft.Extensions.DependencyInjection;
+using TimeNator.Desktop.Interop;
 using TimeNator.Desktop.Services;
 using TimeNator.Desktop.ViewModels;
 using TimeNator.Desktop.Views;
@@ -42,6 +43,9 @@ public partial class App : Application
         services.AddTransient<SubjectsViewModel>();
         services.AddTransient<TimerViewModel>();
         services.AddTransient<HistoryViewModel>();
+        services.AddTransient<SettingsViewModel>();
+        services.AddSingleton<SettingsStore>();
+        services.AddSingleton<IIdleDetector, IdleDetector>();
         services.AddSingleton<SubjectCatalog>();
         services.AddSingleton<SessionJournal>();
         services.AddSingleton<SessionUploader>();

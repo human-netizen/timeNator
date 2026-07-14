@@ -8,13 +8,15 @@ public partial class ShellViewModel(
     INavigator navigator,
     TimerViewModel timer,
     SubjectsViewModel subjects,
-    HistoryViewModel history) : ViewModelBase
+    HistoryViewModel history,
+    SettingsViewModel settings) : ViewModelBase
 {
     public string DisplayName => auth.DisplayName ?? "";
 
     public TimerViewModel Timer { get; } = timer;
     public SubjectsViewModel Subjects { get; } = subjects;
     public HistoryViewModel History { get; } = history;
+    public SettingsViewModel Settings { get; } = settings;
 
     public override async Task ActivateAsync()
     {

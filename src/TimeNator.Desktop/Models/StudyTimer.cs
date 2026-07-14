@@ -53,12 +53,18 @@ public class StudyTimer(TimeProvider clock)
         State = TimerState.Running;
     }
 
-    public void Pause()
+    /// <summary>
+    /// Pauses the timer. <paramref name="since"/> backdates the pause, for idle detection
+    /// that notices the user left some minutes after they actually did.
+    /// </summary>
+    public void Pause(DateTimeOffset? since = null)
     {
         if (State != TimerState.Running)
             return;
-        _runningBefore += Since();
-        _stateSince = clock.GetUtcNow();
+        var now = clock.GetUtcNow();
+        var at = since is { } s ? (s < _stateSince ? _stateSince : s > now ? now : s) : now;
+        _runningBefore += at - _stateSince;
+        _stateSince = at;
         State = TimerState.Paused;
     }
 
