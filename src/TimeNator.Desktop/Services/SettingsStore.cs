@@ -5,6 +5,8 @@ namespace TimeNator.Desktop.Services;
 public record AppSettings
 {
     public int IdleThresholdMinutes { get; init; } = 5;
+    public int PomodoroFocusMinutes { get; init; } = 25;
+    public int PomodoroBreakMinutes { get; init; } = 5;
 }
 
 /// <summary>Per-machine preferences, kept as JSON next to the other local files.</summary>

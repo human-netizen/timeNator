@@ -13,6 +13,16 @@
                 <NumericUpDown Value="{Binding IdleThresholdMinutes}" Minimum="1" Maximum="120" Increment="1"
                                FormatString="0" Width="140" HorizontalAlignment="Left" />
             </StackPanel>
+
+            <StackPanel Spacing="6">
+                <TextBlock Text="Pomodoro focus and break, in minutes" />
+                <StackPanel Orientation="Horizontal" Spacing="10">
+                    <NumericUpDown Value="{Binding PomodoroFocusMinutes}" Minimum="1" Maximum="180" Increment="5"
+                                   FormatString="0" Width="140" />
+                    <NumericUpDown Value="{Binding PomodoroBreakMinutes}" Minimum="1" Maximum="60" Increment="1"
+                                   FormatString="0" Width="140" />
+                </StackPanel>
+            </StackPanel>
         </StackPanel>
     </ScrollViewer>
 

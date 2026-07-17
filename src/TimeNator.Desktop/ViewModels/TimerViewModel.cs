@@ -23,6 +23,7 @@ public partial class TimerViewModel : ViewModelBase
     private readonly DispatcherTimer _tick;
     private DateTimeOffset _lastJournaled;
     private SessionMode _runningMode;
+    private PomodoroCycle? _pomodoro;
 
     public TimerViewModel(SubjectCatalog catalog, SessionJournal journal, SessionUploader uploader,
         IIdleDetector idle, SettingsStore settings, TimeProvider clock)
@@ -46,7 +47,8 @@ public partial class TimerViewModel : ViewModelBase
 
     public ObservableCollection<SubjectResponse> Subjects { get; }
 
-    public static IReadOnlyList<SessionMode> Modes { get; } = [SessionMode.Stopwatch, SessionMode.Countdown];
+    public static IReadOnlyList<SessionMode> Modes { get; } =
+        [SessionMode.Stopwatch, SessionMode.Countdown, SessionMode.Pomodoro];
 
     [ObservableProperty]
     [NotifyCanExecuteChangedFor(nameof(StartCommand))]
@@ -124,6 +126,11 @@ public partial class TimerViewModel : ViewModelBase
         }
 
         _runningMode = SelectedMode;
+        var settings = _settings.Current;
+        _pomodoro = SelectedMode == SessionMode.Pomodoro
+            ? new PomodoroCycle(TimeSpan.FromMinutes(settings.PomodoroFocusMinutes),
+                TimeSpan.FromMinutes(settings.PomodoroBreakMinutes))
+            : null;
         _timer.Start();
         _tick.Start();
         Message = null;
@@ -144,6 +151,9 @@ public partial class TimerViewModel : ViewModelBase
     [RelayCommand]
     private void Resume()
     {
+        // Resuming by hand during a pomodoro break skips the rest of the break.
+        if (_pomodoro?.Phase == PomodoroPhase.Break)
+            _pomodoro.StartFocus(_timer.Elapsed);
         _timer.Resume();
         Journal();
         Refresh();
@@ -199,6 +209,20 @@ public partial class TimerViewModel : ViewModelBase
             Message = $"Paused after {(int)idle.TotalMinutes} min without input.";
         }
 
+        switch (_pomodoro?.Update(_timer.Elapsed, _clock.GetUtcNow()))
+        {
+            case PomodoroPhase.Break:
+                _timer.Pause();
+                Journal();
+                Message = $"Focus block {_pomodoro.CompletedFocusBlocks} done. Take a break.";
+                break;
+            case PomodoroPhase.Focus:
+                _timer.Resume();
+                Journal();
+                Message = "Break over. Back to focus.";
+                break;
+        }
+
         if (_runningMode == SessionMode.Countdown && _timer.Elapsed >= CountdownTarget)
         {
             _ = FinishCountdownAsync();
@@ -228,13 +252,26 @@ public partial class TimerViewModel : ViewModelBase
         State = _timer.State;
         if (State == TimerState.Idle)
         {
-            ClockText = SelectedMode == SessionMode.Countdown ? Format(CountdownTarget) : Format(TimeSpan.Zero);
+            ClockText = SelectedMode switch
+            {
+                SessionMode.Countdown => Format(CountdownTarget),
+                SessionMode.Pomodoro => Format(TimeSpan.FromMinutes(_settings.Current.PomodoroFocusMinutes)),
+                _ => Format(TimeSpan.Zero)
+            };
             DetailText = "";
             return;
         }
 
         var streak = $"streak {Format(_timer.CurrentStreak)}";
-        if (_runningMode == SessionMode.Countdown)
+        if (_pomodoro is not null)
+        {
+            ClockText = Format(_pomodoro.Remaining(_timer.Elapsed, _clock.GetUtcNow()));
+            var phase = _pomodoro.Phase == PomodoroPhase.Focus
+                ? $"Focus {_pomodoro.CompletedFocusBlocks + 1}"
+                : "Break";
+            DetailText = $"{phase} · studied {Format(_timer.Elapsed)}";
+        }
+        else if (_runningMode == SessionMode.Countdown)
         {
             var remaining = CountdownTarget - _timer.Elapsed;
             ClockText = Format(remaining < TimeSpan.Zero ? TimeSpan.Zero : remaining);
