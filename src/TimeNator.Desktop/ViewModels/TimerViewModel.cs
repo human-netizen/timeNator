@@ -22,6 +22,7 @@ public partial class TimerViewModel : ViewModelBase
     private readonly StudyTimer _timer;
     private readonly DispatcherTimer _tick;
     private DateTimeOffset _lastJournaled;
+    private SessionMode _runningMode;
 
     public TimerViewModel(SubjectCatalog catalog, SessionJournal journal, SessionUploader uploader,
         IIdleDetector idle, SettingsStore settings, TimeProvider clock)
@@ -45,11 +46,22 @@ public partial class TimerViewModel : ViewModelBase
 
     public ObservableCollection<SubjectResponse> Subjects { get; }
 
+    public static IReadOnlyList<SessionMode> Modes { get; } = [SessionMode.Stopwatch, SessionMode.Countdown];
+
     [ObservableProperty]
     [NotifyCanExecuteChangedFor(nameof(StartCommand))]
     public partial SubjectResponse? SelectedSubject { get; set; }
 
-    [ObservableProperty] public partial string ElapsedText { get; set; } = "00:00:00";
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsCountdown))]
+    public partial SessionMode SelectedMode { get; set; } = SessionMode.Stopwatch;
+
+    public bool IsCountdown => SelectedMode == SessionMode.Countdown;
+
+    [ObservableProperty] public partial decimal? CountdownMinutes { get; set; } = 50;
+
+    [ObservableProperty] public partial string ClockText { get; set; } = "00:00:00";
+    [ObservableProperty] public partial string DetailText { get; set; } = "";
     [ObservableProperty] public partial string? Message { get; set; }
 
     [ObservableProperty]
@@ -67,6 +79,8 @@ public partial class TimerViewModel : ViewModelBase
     public bool IsIdle => State == TimerState.Idle;
     public bool IsRunning => State == TimerState.Running;
     public bool IsPaused => State == TimerState.Paused;
+
+    private TimeSpan CountdownTarget => TimeSpan.FromMinutes((double)(CountdownMinutes ?? 0));
 
     public override Task ActivateAsync()
     {
@@ -103,6 +117,13 @@ public partial class TimerViewModel : ViewModelBase
     [RelayCommand(CanExecute = nameof(CanStart))]
     private void Start()
     {
+        if (SelectedMode == SessionMode.Countdown && CountdownTarget <= TimeSpan.Zero)
+        {
+            Message = "Set a countdown length first.";
+            return;
+        }
+
+        _runningMode = SelectedMode;
         _timer.Start();
         _tick.Start();
         Message = null;
@@ -135,7 +156,7 @@ public partial class TimerViewModel : ViewModelBase
         var timing = _timer.Stop();
         _tick.Stop();
         Refresh();
-        await SubmitAsync(subject.Id, subject.Name, SessionMode.Stopwatch, timing);
+        await SubmitAsync(subject.Id, subject.Name, _runningMode, timing);
     }
 
     private bool CanStop() => State != TimerState.Idle;
@@ -150,7 +171,7 @@ public partial class TimerViewModel : ViewModelBase
         }
 
         var request = new CreateSessionRequest(subjectId, timing.StartedAt, timing.EndedAt,
-            timing.DurationSeconds, timing.PausedSeconds, mode, SessionSource.Timer, timing.DurationSeconds);
+            timing.DurationSeconds, timing.PausedSeconds, mode, SessionSource.Timer, timing.MaxStreakSeconds);
 
         // SubmitAsync journals the finished session before its first await, so clearing
         // the active entry afterwards never leaves a window where the session is on disk nowhere.
@@ -178,23 +199,57 @@ public partial class TimerViewModel : ViewModelBase
             Message = $"Paused after {(int)idle.TotalMinutes} min without input.";
         }
 
+        if (_runningMode == SessionMode.Countdown && _timer.Elapsed >= CountdownTarget)
+        {
+            _ = FinishCountdownAsync();
+            return;
+        }
+
         if (_clock.GetUtcNow() - _lastJournaled >= JournalInterval)
             Journal();
         Refresh();
     }
 
+    private async Task FinishCountdownAsync()
+    {
+        await StopAsync();
+        Message = $"Countdown finished. {Message}";
+    }
+
     private void Journal()
     {
         _lastJournaled = _clock.GetUtcNow();
-        _journal.SetActive(new ActiveSession(SelectedSubject!.Id, SelectedSubject.Name, SessionMode.Stopwatch,
+        _journal.SetActive(new ActiveSession(SelectedSubject!.Id, SelectedSubject.Name, _runningMode,
             _timer.Snapshot(), _lastJournaled));
     }
 
     private void Refresh()
     {
         State = _timer.State;
-        ElapsedText = Format(_timer.Elapsed);
+        if (State == TimerState.Idle)
+        {
+            ClockText = SelectedMode == SessionMode.Countdown ? Format(CountdownTarget) : Format(TimeSpan.Zero);
+            DetailText = "";
+            return;
+        }
+
+        var streak = $"streak {Format(_timer.CurrentStreak)}";
+        if (_runningMode == SessionMode.Countdown)
+        {
+            var remaining = CountdownTarget - _timer.Elapsed;
+            ClockText = Format(remaining < TimeSpan.Zero ? TimeSpan.Zero : remaining);
+            DetailText = $"Studied {Format(_timer.Elapsed)} · {streak}";
+        }
+        else
+        {
+            ClockText = Format(_timer.Elapsed);
+            DetailText = $"Current {streak}";
+        }
     }
+
+    partial void OnSelectedModeChanged(SessionMode value) => Refresh();
+
+    partial void OnCountdownMinutesChanged(decimal? value) => Refresh();
 
     private static string Format(TimeSpan span) => $"{(int)span.TotalHours:00}:{span.Minutes:00}:{span.Seconds:00}";
 }

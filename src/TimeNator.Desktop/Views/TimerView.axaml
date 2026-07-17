@@ -6,7 +6,7 @@
              x:Class="TimeNator.Desktop.Views.TimerView"
              x:DataType="vm:TimerViewModel">
 
-    <StackPanel Spacing="18" HorizontalAlignment="Center" VerticalAlignment="Center" Width="360">
+    <StackPanel Spacing="18" HorizontalAlignment="Center" VerticalAlignment="Center" Width="380">
         <ComboBox ItemsSource="{Binding Subjects}" SelectedItem="{Binding SelectedSubject}"
                   PlaceholderText="Choose a subject" HorizontalAlignment="Stretch"
                   IsEnabled="{Binding IsIdle}">
@@ -21,7 +21,16 @@
             </ComboBox.ItemTemplate>
         </ComboBox>
 
-        <TextBlock Text="{Binding ElapsedText}" FontSize="64" FontWeight="Light" HorizontalAlignment="Center" />
+        <StackPanel Orientation="Horizontal" Spacing="10" HorizontalAlignment="Center" IsVisible="{Binding IsIdle}">
+            <ComboBox ItemsSource="{x:Static vm:TimerViewModel.Modes}" SelectedItem="{Binding SelectedMode}"
+                      Width="150" />
+            <NumericUpDown Value="{Binding CountdownMinutes}" Minimum="1" Maximum="600" Increment="5"
+                           FormatString="0" Width="130" IsVisible="{Binding IsCountdown}" />
+            <TextBlock Text="min" VerticalAlignment="Center" IsVisible="{Binding IsCountdown}" />
+        </StackPanel>
+
+        <TextBlock Text="{Binding ClockText}" FontSize="64" FontWeight="Light" HorizontalAlignment="Center" />
+        <TextBlock Text="{Binding DetailText}" HorizontalAlignment="Center" Opacity="0.6" Margin="0,-12,0,0" />
 
         <StackPanel Orientation="Horizontal" Spacing="10" HorizontalAlignment="Center">
             <Button Content="Start" Command="{Binding StartCommand}" IsVisible="{Binding IsIdle}"

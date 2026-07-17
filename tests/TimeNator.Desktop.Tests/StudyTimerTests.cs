@@ -91,6 +91,39 @@ public class StudyTimerTests
     }
 
     [Fact]
+    public void Short_pause_keeps_the_streak_going()
+    {
+        var timer = new StudyTimer(_clock);
+        timer.Start();
+        _clock.Advance(TimeSpan.FromMinutes(10));
+        timer.Pause();
+        _clock.Advance(TimeSpan.FromSeconds(10));
+        timer.Resume();
+        _clock.Advance(TimeSpan.FromMinutes(5));
+
+        var result = timer.Stop();
+
+        Assert.Equal(15 * 60, result.MaxStreakSeconds);
+    }
+
+    [Fact]
+    public void Long_pause_breaks_the_streak_and_the_longest_wins()
+    {
+        var timer = new StudyTimer(_clock);
+        timer.Start();
+        _clock.Advance(TimeSpan.FromMinutes(20));
+        timer.Pause();
+        _clock.Advance(TimeSpan.FromMinutes(2));
+        timer.Resume();
+        _clock.Advance(TimeSpan.FromMinutes(5));
+
+        var result = timer.Stop();
+
+        Assert.Equal(25 * 60, result.DurationSeconds);
+        Assert.Equal(20 * 60, result.MaxStreakSeconds);
+    }
+
+    [Fact]
     public void Starting_twice_throws()
     {
         var timer = new StudyTimer(_clock);
