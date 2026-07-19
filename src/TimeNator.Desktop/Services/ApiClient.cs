@@ -38,6 +38,16 @@ public class ApiClient(HttpClient http) : IApiClient
             $"api/sessions?from={Uri.EscapeDataString(from.ToString("O"))}&to={Uri.EscapeDataString(to.ToString("O"))}",
             cancellationToken);
 
+    public Task<List<DayOffResponse>> GetDayOffsAsync(DateOnly from, DateOnly to,
+        CancellationToken cancellationToken = default) =>
+        GetAsync<List<DayOffResponse>>($"api/day-offs?from={from:yyyy-MM-dd}&to={to:yyyy-MM-dd}", cancellationToken);
+
+    public Task<DayOffResponse> CreateDayOffAsync(DayOffRequest request, CancellationToken cancellationToken = default) =>
+        SendAsync<DayOffResponse>(HttpMethod.Post, "api/day-offs", request, cancellationToken);
+
+    public Task DeleteDayOffAsync(DateOnly date, CancellationToken cancellationToken = default) =>
+        SendAsync(HttpMethod.Delete, $"api/day-offs/{date:yyyy-MM-dd}", null, cancellationToken);
+
     private Task<T> GetAsync<T>(string path, CancellationToken cancellationToken) =>
         SendAsync<T>(HttpMethod.Get, path, null, cancellationToken);
 

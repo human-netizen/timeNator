@@ -43,6 +43,7 @@ public partial class App : Application
         services.AddTransient<SubjectsViewModel>();
         services.AddTransient<TimerViewModel>();
         services.AddTransient<HistoryViewModel>();
+        services.AddTransient<ManualEntryViewModel>();
         services.AddTransient<SettingsViewModel>();
         services.AddSingleton<SettingsStore>();
         services.AddSingleton<IIdleDetector, IdleDetector>();

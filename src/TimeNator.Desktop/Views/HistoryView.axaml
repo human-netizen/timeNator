@@ -1,13 +1,47 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="using:TimeNator.Desktop.ViewModels"
+             xmlns:dto="using:TimeNator.Shared.Dtos"
              xmlns:conv="using:TimeNator.Desktop.Converters"
              x:Class="TimeNator.Desktop.Views.HistoryView"
              x:DataType="vm:HistoryViewModel">
 
     <ScrollViewer>
         <StackPanel Margin="24" Spacing="18" Width="560" HorizontalAlignment="Left">
-            <TextBlock Text="History" FontSize="22" FontWeight="SemiBold" />
+            <DockPanel>
+                <Button DockPanel.Dock="Right" Content="{Binding DayOffButtonText}"
+                        Command="{Binding ToggleTodayOffCommand}" />
+                <TextBlock Text="History" FontSize="22" FontWeight="SemiBold" />
+            </DockPanel>
+
+            <Expander Header="Add time you did not track" HorizontalAlignment="Stretch">
+                <StackPanel Spacing="10" DataContext="{Binding ManualEntry}" x:DataType="vm:ManualEntryViewModel">
+                    <ComboBox ItemsSource="{Binding Subjects}" SelectedItem="{Binding Subject}"
+                              PlaceholderText="Subject" HorizontalAlignment="Stretch">
+                        <ComboBox.ItemTemplate>
+                            <DataTemplate x:DataType="dto:SubjectResponse">
+                                <TextBlock Text="{Binding Name}" />
+                            </DataTemplate>
+                        </ComboBox.ItemTemplate>
+                    </ComboBox>
+                    <StackPanel Orientation="Horizontal" Spacing="10">
+                        <CalendarDatePicker SelectedDate="{Binding Date}"
+                                            Width="160" />
+                        <TimePicker SelectedTime="{Binding StartTime}" ClockIdentifier="24HourClock" />
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal" Spacing="10">
+                        <NumericUpDown Value="{Binding Minutes}" Minimum="1" Maximum="1440" Increment="5"
+                                       FormatString="0" Width="140" />
+                        <TextBlock Text="minutes" VerticalAlignment="Center" />
+                        <CheckBox Content="Studied away from the computer" IsChecked="{Binding IsOffline}"
+                                  Margin="12,0,0,0" />
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal" Spacing="12">
+                        <Button Content="Add" Command="{Binding SaveCommand}" />
+                        <TextBlock Text="{Binding Message}" VerticalAlignment="Center" Opacity="0.8" />
+                    </StackPanel>
+                </StackPanel>
+            </Expander>
             <TextBlock Text="{Binding Error}" Foreground="IndianRed"
                        IsVisible="{Binding Error, Converter={x:Static ObjectConverters.IsNotNull}}" />
             <TextBlock Text="No sessions yet." Opacity="0.6"
@@ -21,6 +55,10 @@
                                 <TextBlock DockPanel.Dock="Right" Text="{Binding Total}" FontWeight="SemiBold" />
                                 <TextBlock Text="{Binding Title}" FontWeight="SemiBold" FontSize="15" />
                             </DockPanel>
+                            <Border IsVisible="{Binding IsDayOff}" Background="#332ECC71" CornerRadius="4"
+                                    Padding="8,3" HorizontalAlignment="Left">
+                                <TextBlock Text="{Binding DayOffLabel}" FontSize="12" />
+                            </Border>
                             <ItemsControl ItemsSource="{Binding Sessions}">
                                 <ItemsControl.ItemTemplate>
                                     <DataTemplate x:DataType="vm:HistoryItem">

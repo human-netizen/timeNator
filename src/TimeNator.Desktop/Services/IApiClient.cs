@@ -16,4 +16,8 @@ public interface IApiClient
     Task<SessionResponse> CreateSessionAsync(CreateSessionRequest request, CancellationToken cancellationToken = default);
     Task<List<SessionResponse>> GetSessionsAsync(DateTimeOffset from, DateTimeOffset to,
         CancellationToken cancellationToken = default);
+
+    Task<List<DayOffResponse>> GetDayOffsAsync(DateOnly from, DateOnly to, CancellationToken cancellationToken = default);
+    Task<DayOffResponse> CreateDayOffAsync(DayOffRequest request, CancellationToken cancellationToken = default);
+    Task DeleteDayOffAsync(DateOnly date, CancellationToken cancellationToken = default);
 }

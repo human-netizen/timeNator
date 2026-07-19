@@ -57,6 +57,7 @@ builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddScoped<TokenService>();
 builder.Services.AddScoped<SubjectService>();
 builder.Services.AddScoped<SessionService>();
+builder.Services.AddScoped<DayOffService>();
 
 builder.Services.AddHealthChecks().AddDbContextCheck<AppDbContext>("database");
 

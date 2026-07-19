@@ -11,6 +11,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
     public DbSet<Subject> Subjects => Set<Subject>();
     public DbSet<StudySession> StudySessions => Set<StudySession>();
+    public DbSet<DayOff> DayOffs => Set<DayOff>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
