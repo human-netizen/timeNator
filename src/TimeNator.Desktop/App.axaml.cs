@@ -42,10 +42,13 @@ public partial class App : Application
         services.AddTransient<ShellViewModel>();
         services.AddTransient<SubjectsViewModel>();
         services.AddTransient<TimerViewModel>();
+        services.AddTransient<BackgroundAudioViewModel>();
+        services.AddSingleton<ILoopingSound, LoopingSound>();
         services.AddTransient<HistoryViewModel>();
         services.AddTransient<ManualEntryViewModel>();
         services.AddTransient<SettingsViewModel>();
         services.AddSingleton<SettingsStore>();
+        services.AddSingleton<IWindowService, WindowService>();
         services.AddSingleton<IIdleDetector, IdleDetector>();
         services.AddSingleton<SubjectCatalog>();
         services.AddSingleton<SessionJournal>();

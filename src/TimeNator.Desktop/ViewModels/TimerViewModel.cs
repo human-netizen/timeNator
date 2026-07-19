@@ -18,6 +18,7 @@ public partial class TimerViewModel : ViewModelBase
     private readonly SessionUploader _uploader;
     private readonly IIdleDetector _idle;
     private readonly SettingsStore _settings;
+    private readonly IWindowService _windows;
     private readonly TimeProvider _clock;
     private readonly StudyTimer _timer;
     private readonly DispatcherTimer _tick;
@@ -26,13 +27,14 @@ public partial class TimerViewModel : ViewModelBase
     private PomodoroCycle? _pomodoro;
 
     public TimerViewModel(SubjectCatalog catalog, SessionJournal journal, SessionUploader uploader,
-        IIdleDetector idle, SettingsStore settings, TimeProvider clock)
+        IIdleDetector idle, SettingsStore settings, IWindowService windows, TimeProvider clock)
     {
         _journal = journal;
         _uploader = uploader;
         _clock = clock;
         _idle = idle;
         _settings = settings;
+        _windows = windows;
         _timer = new StudyTimer(clock);
         Subjects = catalog.Subjects;
         _tick = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(250) };
@@ -170,6 +172,9 @@ public partial class TimerViewModel : ViewModelBase
     }
 
     private bool CanStop() => State != TimerState.Idle;
+
+    [RelayCommand]
+    private void OpenDeskMode() => _windows.ShowDeskMode(this);
 
     private async Task SubmitAsync(Guid subjectId, string subjectName, SessionMode mode, CompletedTiming timing)
     {

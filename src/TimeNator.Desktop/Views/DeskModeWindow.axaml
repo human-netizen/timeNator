@@ -1,0 +1,23 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:TimeNator.Desktop.ViewModels"
+        x:Class="TimeNator.Desktop.Views.DeskModeWindow"
+        x:DataType="vm:DeskModeViewModel"
+        WindowState="FullScreen"
+        Background="Black"
+        Title="TimeNator desk mode">
+
+    <Window.KeyBindings>
+        <KeyBinding Gesture="Escape" Command="{Binding CloseCommand}" />
+    </Window.KeyBindings>
+
+    <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Margin="{Binding Offset}" Spacing="8">
+        <TextBlock Text="{Binding SubjectName}" HorizontalAlignment="Center" Foreground="#888" FontSize="22" />
+        <TextBlock Text="{Binding ClockText}" HorizontalAlignment="Center" Foreground="#DDD"
+                   FontSize="160" FontWeight="Thin" />
+        <TextBlock Text="{Binding DetailText}" HorizontalAlignment="Center" Foreground="#666" FontSize="18" />
+        <TextBlock Text="Esc to leave" HorizontalAlignment="Center" Foreground="#333" FontSize="12"
+                   Margin="0,24,0,0" />
+    </StackPanel>
+
+</Window>

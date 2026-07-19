@@ -39,6 +39,8 @@
                     MinWidth="90" HorizontalContentAlignment="Center" />
             <Button Content="Resume" Command="{Binding ResumeCommand}" IsVisible="{Binding IsPaused}"
                     MinWidth="90" HorizontalContentAlignment="Center" />
+            <Button Content="Desk mode" Command="{Binding OpenDeskModeCommand}" IsVisible="{Binding !IsIdle}"
+                    MinWidth="90" HorizontalContentAlignment="Center" />
             <Button Content="Stop" Command="{Binding StopCommand}" IsVisible="{Binding !IsIdle}"
                     MinWidth="90" HorizontalContentAlignment="Center" />
         </StackPanel>

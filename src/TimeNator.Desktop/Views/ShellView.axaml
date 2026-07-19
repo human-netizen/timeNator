@@ -8,6 +8,15 @@
         <Border DockPanel.Dock="Top" Padding="16,10">
             <DockPanel>
                 <Button DockPanel.Dock="Right" Content="Log out" Command="{Binding LogoutCommand}" />
+                <ComboBox DockPanel.Dock="Right" Margin="0,0,12,0" Width="200"
+                          ItemsSource="{x:Static vm:BackgroundAudioViewModel.Options}"
+                          SelectedItem="{Binding Audio.Selected}">
+                    <ComboBox.ItemTemplate>
+                        <DataTemplate x:DataType="vm:SoundOption">
+                            <TextBlock Text="{Binding Name}" />
+                        </DataTemplate>
+                    </ComboBox.ItemTemplate>
+                </ComboBox>
                 <TextBlock Text="{Binding DisplayName}" VerticalAlignment="Center" FontWeight="SemiBold" />
             </DockPanel>
         </Border>
