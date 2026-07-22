@@ -59,6 +59,33 @@ public class GroupService(AppDbContext db, IPasswordHasher<Group> hasher, TimePr
                 g.Owner.DisplayName))
             .ToListAsync(cancellationToken);
 
+    public const int SearchPageSize = 20;
+
+    /// <summary>Public groups whose name contains the query, case-insensitively. Private groups never appear.</summary>
+    public async Task<PagedResult<GroupSummary>> SearchAsync(string? query, int page,
+        CancellationToken cancellationToken)
+    {
+        page = Math.Max(1, page);
+        var groups = db.Groups.Where(g => g.IsPublic);
+        if (!string.IsNullOrWhiteSpace(query))
+        {
+            // Escape LIKE wildcards so a user typing % or _ searches for them literally.
+            var pattern = "%" + query.Trim().Replace(@"\", @"\\").Replace("%", @"\%").Replace("_", @"\_") + "%";
+            groups = groups.Where(g => EF.Functions.ILike(g.Name, pattern));
+        }
+
+        var total = await groups.CountAsync(cancellationToken);
+        var items = await groups
+            .OrderByDescending(g => g.Members.Count).ThenBy(g => g.Name)
+            .Skip((page - 1) * SearchPageSize)
+            .Take(SearchPageSize)
+            .Select(g => new GroupSummary(g.Id, g.Name, g.Description, g.IsPublic, g.Members.Count,
+                g.Owner.DisplayName))
+            .ToListAsync(cancellationToken);
+
+        return new PagedResult<GroupSummary>(items, page, SearchPageSize, total);
+    }
+
     public async Task<ServiceResult<GroupDetail>> JoinAsync(Guid userId, Guid groupId, string? password,
         CancellationToken cancellationToken)
     {

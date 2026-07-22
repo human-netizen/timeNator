@@ -60,6 +60,7 @@ builder.Services.AddScoped<SubjectService>();
 builder.Services.AddScoped<SessionService>();
 builder.Services.AddScoped<DayOffService>();
 builder.Services.AddScoped<GroupService>();
+builder.Services.AddScoped<InviteService>();
 builder.Services.AddScoped<IPasswordHasher<Group>, PasswordHasher<Group>>();
 
 builder.Services.AddHealthChecks().AddDbContextCheck<AppDbContext>("database");

@@ -10,7 +10,7 @@ namespace TimeNator.Api.Controllers;
 [ApiController]
 [Authorize]
 [Route("api/groups")]
-public class GroupsController(GroupService groups) : ControllerBase
+public class GroupsController(GroupService groups, InviteService invites) : ControllerBase
 {
     [HttpPost]
     public async Task<ActionResult<GroupDetail>> Create(
@@ -23,6 +23,11 @@ public class GroupsController(GroupService groups) : ControllerBase
         var result = await groups.CreateAsync(User.GetUserId(), request, cancellationToken);
         return this.ToActionResult(result, created => Created($"/api/groups/{created.Id}", created));
     }
+
+    [HttpGet("search")]
+    public Task<PagedResult<GroupSummary>> Search([FromQuery] string? q, [FromQuery] int page,
+        CancellationToken cancellationToken) =>
+        groups.SearchAsync(q, page, cancellationToken);
 
     [HttpGet("mine")]
     public Task<List<GroupSummary>> Mine(CancellationToken cancellationToken) =>
@@ -44,6 +49,20 @@ public class GroupsController(GroupService groups) : ControllerBase
     [HttpPost("{id:guid}/leave")]
     public async Task<IActionResult> Leave(Guid id, CancellationToken cancellationToken) =>
         this.ToNoContent(await groups.LeaveAsync(User.GetUserId(), id, cancellationToken));
+
+    [HttpPost("{id:guid}/invites")]
+    public async Task<ActionResult<InviteResponse>> CreateInvite(Guid id, CreateInviteRequest request,
+        CancellationToken cancellationToken) =>
+        this.ToActionResult(await invites.CreateAsync(User.GetUserId(), id, request, cancellationToken),
+            invite => Created($"/api/groups/join/{invite.Code}", invite));
+
+    [HttpGet("join/{code}")]
+    public async Task<ActionResult<GroupSummary>> PreviewInvite(string code, CancellationToken cancellationToken) =>
+        this.ToActionResult(await invites.PreviewAsync(code, cancellationToken));
+
+    [HttpPost("join/{code}")]
+    public async Task<ActionResult<GroupDetail>> AcceptInvite(string code, CancellationToken cancellationToken) =>
+        this.ToActionResult(await invites.AcceptAsync(User.GetUserId(), code, cancellationToken));
 
     [HttpGet("{id:guid}/members")]
     public async Task<ActionResult<List<GroupMemberItem>>> Members(Guid id, CancellationToken cancellationToken) =>

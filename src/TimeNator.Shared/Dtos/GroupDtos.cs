@@ -31,3 +31,7 @@ public record GroupMemberItem(
     GroupRole Role,
     bool CanChat,
     DateTimeOffset JoinedAt);
+
+public record CreateInviteRequest(int? ExpiresInHours, int? MaxUses);
+
+public record InviteResponse(string Code, DateTimeOffset? ExpiresAt, int? MaxUses, int UseCount);
