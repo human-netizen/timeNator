@@ -12,6 +12,8 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
     public DbSet<Subject> Subjects => Set<Subject>();
     public DbSet<StudySession> StudySessions => Set<StudySession>();
     public DbSet<DayOff> DayOffs => Set<DayOff>();
+    public DbSet<Group> Groups => Set<Group>();
+    public DbSet<GroupMember> GroupMembers => Set<GroupMember>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {

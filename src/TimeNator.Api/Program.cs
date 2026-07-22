@@ -1,6 +1,7 @@
 using System.Text;
 using FluentValidation;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Serilog;
@@ -58,6 +59,8 @@ builder.Services.AddScoped<TokenService>();
 builder.Services.AddScoped<SubjectService>();
 builder.Services.AddScoped<SessionService>();
 builder.Services.AddScoped<DayOffService>();
+builder.Services.AddScoped<GroupService>();
+builder.Services.AddScoped<IPasswordHasher<Group>, PasswordHasher<Group>>();
 
 builder.Services.AddHealthChecks().AddDbContextCheck<AppDbContext>("database");
 

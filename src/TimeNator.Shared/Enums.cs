@@ -17,3 +17,10 @@ public enum SessionSource
     Manual,
     Offline
 }
+
+[JsonConverter(typeof(JsonStringEnumConverter<GroupRole>))]
+public enum GroupRole
+{
+    Owner,
+    Member
+}
