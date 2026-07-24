@@ -5,9 +5,11 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Serilog;
+using StackExchange.Redis;
 using TimeNator.Api;
 using TimeNator.Api.Data;
 using TimeNator.Api.Entities;
+using TimeNator.Api.Hubs;
 using TimeNator.Api.Services;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -51,6 +53,18 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             NameClaimType = "name",
             ClockSkew = TimeSpan.FromSeconds(30)
         };
+        // Browsers and the SignalR client cannot set headers on a WebSocket upgrade,
+        // so hub connections carry the token in the query string instead.
+        options.Events = new JwtBearerEvents
+        {
+            OnMessageReceived = context =>
+            {
+                var token = context.Request.Query["access_token"];
+                if (!string.IsNullOrEmpty(token) && context.HttpContext.Request.Path.StartsWithSegments("/hubs"))
+                    context.Token = token;
+                return Task.CompletedTask;
+            }
+        };
     });
 builder.Services.AddAuthorization();
 
@@ -61,6 +75,11 @@ builder.Services.AddScoped<SessionService>();
 builder.Services.AddScoped<DayOffService>();
 builder.Services.AddScoped<GroupService>();
 builder.Services.AddScoped<InviteService>();
+
+var redisConnection = builder.Configuration.GetConnectionString("Redis")
+                      ?? throw new InvalidOperationException("Connection string 'Redis' is not configured.");
+builder.Services.AddSingleton<IConnectionMultiplexer>(_ => ConnectionMultiplexer.Connect(redisConnection));
+builder.Services.AddSingleton<PresenceService>();
 builder.Services.AddScoped<IPasswordHasher<Group>, PasswordHasher<Group>>();
 
 builder.Services.AddHealthChecks().AddDbContextCheck<AppDbContext>("database");
@@ -68,6 +87,7 @@ builder.Services.AddHealthChecks().AddDbContextCheck<AppDbContext>("database");
 builder.Services.AddValidatorsFromAssemblyContaining<Program>();
 builder.Services.AddProblemDetails();
 builder.Services.AddControllers();
+builder.Services.AddSignalR();
 
 var app = builder.Build();
 
@@ -81,6 +101,7 @@ app.UseAuthorization();
 app.MapHealthChecks("/health", new() { ResponseWriter = HealthResponse.WriteAsync });
 
 app.MapControllers();
+app.MapHub<StudyHub>("/hubs/study");
 
 app.Run();
 

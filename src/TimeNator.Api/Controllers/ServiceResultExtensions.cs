@@ -16,6 +16,10 @@ public static class ServiceResultExtensions
     public static IActionResult ToNoContent<T>(this ControllerBase controller, ServiceResult<T> result) =>
         result.Error is { } error ? controller.ToProblem(error, result.Message) : controller.NoContent();
 
+    /// <summary>The problem response for a failed result.</summary>
+    public static ObjectResult ToProblem<T>(this ControllerBase controller, ServiceResult<T> failed) =>
+        controller.ToProblem(failed.Error!.Value, failed.Message);
+
     private static ObjectResult ToProblem(this ControllerBase controller, ServiceError error, string? message) =>
         controller.Problem(
             statusCode: error switch

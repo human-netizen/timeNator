@@ -10,8 +10,18 @@ namespace TimeNator.Api.Controllers;
 [ApiController]
 [Authorize]
 [Route("api/groups")]
-public class GroupsController(GroupService groups, InviteService invites) : ControllerBase
+public class GroupsController(GroupService groups, InviteService invites, PresenceService presence) : ControllerBase
 {
+    /// <summary>Who in the group is studying right now, for the first paint of the live view.</summary>
+    [HttpGet("{id:guid}/presence")]
+    public async Task<ActionResult<List<MemberPresence>>> Presence(Guid id, CancellationToken cancellationToken)
+    {
+        var members = await groups.ListMemberIdsAsync(User.GetUserId(), id, cancellationToken);
+        if (members.Error is not null)
+            return this.ToProblem(members);
+        return await presence.GetManyAsync(members.Value!);
+    }
+
     [HttpPost]
     public async Task<ActionResult<GroupDetail>> Create(
         CreateGroupRequest request, IValidator<CreateGroupRequest> validator, CancellationToken cancellationToken)

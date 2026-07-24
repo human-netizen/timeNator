@@ -14,6 +14,12 @@ public class SubjectService(AppDbContext db, TimeProvider clock)
             .Select(s => ToResponse(s))
             .ToListAsync(cancellationToken);
 
+    public Task<SubjectResponse?> FindAsync(Guid userId, Guid id, CancellationToken cancellationToken) =>
+        db.Subjects
+            .Where(s => s.Id == id && s.UserId == userId && !s.IsArchived)
+            .Select(s => ToResponse(s))
+            .SingleOrDefaultAsync(cancellationToken);
+
     public Task<bool> NameTakenAsync(Guid userId, string name, Guid? exceptId, CancellationToken cancellationToken) =>
         db.Subjects.AnyAsync(
             s => s.UserId == userId && !s.IsArchived && s.Name == name && s.Id != exceptId,

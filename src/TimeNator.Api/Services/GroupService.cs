@@ -160,6 +160,20 @@ public class GroupService(AppDbContext db, IPasswordHasher<Group> hasher, TimePr
         return ServiceResult<List<GroupMemberItem>>.Ok(members);
     }
 
+    public Task<List<Guid>> ListMyGroupIdsAsync(Guid userId, CancellationToken cancellationToken) =>
+        db.GroupMembers.Where(m => m.UserId == userId).Select(m => m.GroupId).ToListAsync(cancellationToken);
+
+    public async Task<ServiceResult<List<Guid>>> ListMemberIdsAsync(Guid userId, Guid groupId,
+        CancellationToken cancellationToken)
+    {
+        if (!await IsMemberAsync(userId, groupId, cancellationToken))
+            return ServiceResult<List<Guid>>.Fail(ServiceError.NotFound, "Group not found.");
+        return ServiceResult<List<Guid>>.Ok(await db.GroupMembers
+            .Where(m => m.GroupId == groupId)
+            .Select(m => m.UserId)
+            .ToListAsync(cancellationToken));
+    }
+
     public Task<bool> IsMemberAsync(Guid userId, Guid groupId, CancellationToken cancellationToken) =>
         db.GroupMembers.AnyAsync(m => m.GroupId == groupId && m.UserId == userId, cancellationToken);
 
