@@ -20,4 +20,17 @@ public interface IApiClient
     Task<List<DayOffResponse>> GetDayOffsAsync(DateOnly from, DateOnly to, CancellationToken cancellationToken = default);
     Task<DayOffResponse> CreateDayOffAsync(DayOffRequest request, CancellationToken cancellationToken = default);
     Task DeleteDayOffAsync(DateOnly date, CancellationToken cancellationToken = default);
+
+    Task<List<GroupSummary>> GetMyGroupsAsync(CancellationToken cancellationToken = default);
+    Task<PagedResult<GroupSummary>> SearchGroupsAsync(string query, int page,
+        CancellationToken cancellationToken = default);
+    Task<GroupDetail> GetGroupAsync(Guid id, CancellationToken cancellationToken = default);
+    Task<GroupDetail> CreateGroupAsync(CreateGroupRequest request, CancellationToken cancellationToken = default);
+    Task DeleteGroupAsync(Guid id, CancellationToken cancellationToken = default);
+    Task<GroupDetail> JoinGroupAsync(Guid id, string? password, CancellationToken cancellationToken = default);
+    Task LeaveGroupAsync(Guid id, CancellationToken cancellationToken = default);
+    Task<List<GroupMemberItem>> GetGroupMembersAsync(Guid id, CancellationToken cancellationToken = default);
+    Task<InviteResponse> CreateInviteAsync(Guid groupId, CreateInviteRequest request,
+        CancellationToken cancellationToken = default);
+    Task<GroupDetail> AcceptInviteAsync(string code, CancellationToken cancellationToken = default);
 }

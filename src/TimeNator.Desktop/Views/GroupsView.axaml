@@ -1,0 +1,91 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:TimeNator.Desktop.ViewModels"
+             xmlns:dto="using:TimeNator.Shared.Dtos"
+             x:Class="TimeNator.Desktop.Views.GroupsView"
+             x:DataType="vm:GroupsViewModel">
+
+    <Grid ColumnDefinitions="260,*" Margin="16">
+        <DockPanel Grid.Column="0" Margin="0,0,16,0">
+            <StackPanel DockPanel.Dock="Top" Spacing="8" Margin="0,0,0,12">
+                <TextBlock Text="My groups" FontSize="18" FontWeight="SemiBold" />
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                    <Button Content="New group" Command="{Binding ShowCreateCommand}" />
+                    <Button Content="Find groups" Command="{Binding ShowFindCommand}" />
+                </StackPanel>
+            </StackPanel>
+            <TextBlock DockPanel.Dock="Bottom" Text="{Binding Error}" Foreground="IndianRed" TextWrapping="Wrap"
+                       IsVisible="{Binding Error, Converter={x:Static ObjectConverters.IsNotNull}}" />
+            <ListBox ItemsSource="{Binding MyGroups}" SelectedItem="{Binding SelectedGroup}">
+                <ListBox.ItemTemplate>
+                    <DataTemplate x:DataType="dto:GroupSummary">
+                        <StackPanel>
+                            <TextBlock Text="{Binding Name}" FontWeight="SemiBold" />
+                            <TextBlock Opacity="0.6" FontSize="12">
+                                <Run Text="{Binding MemberCount}" /><Run Text=" members" />
+                            </TextBlock>
+                        </StackPanel>
+                    </DataTemplate>
+                </ListBox.ItemTemplate>
+            </ListBox>
+        </DockPanel>
+
+        <Panel Grid.Column="1">
+            <TextBlock Text="Pick a group, or create or find one." Opacity="0.6"
+                       HorizontalAlignment="Center" VerticalAlignment="Center" IsVisible="{Binding IsEmpty}" />
+
+            <StackPanel Spacing="10" MaxWidth="460" HorizontalAlignment="Left" IsVisible="{Binding IsCreating}">
+                <TextBlock Text="New group" FontSize="18" FontWeight="SemiBold" />
+                <TextBox PlaceholderText="Name" Text="{Binding NewName}" />
+                <TextBox PlaceholderText="Description (optional)" Text="{Binding NewDescription}"
+                         AcceptsReturn="True" Height="80" TextWrapping="Wrap" />
+                <CheckBox Content="Private, protected by a password" IsChecked="{Binding NewIsPrivate}" />
+                <TextBox PlaceholderText="Group password" PasswordChar="•" Text="{Binding NewPassword}"
+                         IsVisible="{Binding NewIsPrivate}" />
+                <Button Content="Create" Command="{Binding CreateCommand}" />
+            </StackPanel>
+
+            <DockPanel IsVisible="{Binding IsFinding}">
+                <StackPanel DockPanel.Dock="Top" Spacing="10" Margin="0,0,0,12">
+                    <TextBlock Text="Find a group" FontSize="18" FontWeight="SemiBold" />
+                    <DockPanel>
+                        <Button DockPanel.Dock="Right" Content="Search" Command="{Binding SearchCommand}"
+                                Margin="8,0,0,0" IsDefault="True" />
+                        <TextBox PlaceholderText="Group name" Text="{Binding Query}" />
+                    </DockPanel>
+                    <DockPanel>
+                        <Button DockPanel.Dock="Right" Content="Join with code" Command="{Binding JoinByCodeCommand}"
+                                Margin="8,0,0,0" />
+                        <TextBox PlaceholderText="Have an invite code? Paste it here" Text="{Binding InviteCode}" />
+                    </DockPanel>
+                </StackPanel>
+                <Button DockPanel.Dock="Bottom" Content="More results" Command="{Binding MoreResultsCommand}"
+                        IsVisible="{Binding HasMoreResults}" Margin="0,8,0,0" />
+                <ScrollViewer>
+                    <ItemsControl ItemsSource="{Binding SearchResults}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate x:DataType="dto:GroupSummary">
+                                <DockPanel Margin="0,6">
+                                    <Button DockPanel.Dock="Right" Content="Join"
+                                            Command="{Binding $parent[UserControl].((vm:GroupsViewModel)DataContext).JoinCommand}"
+                                            CommandParameter="{Binding}" />
+                                    <StackPanel>
+                                        <TextBlock Text="{Binding Name}" FontWeight="SemiBold" />
+                                        <TextBlock Text="{Binding Description}" Opacity="0.7" TextWrapping="Wrap" />
+                                        <TextBlock Opacity="0.5" FontSize="12">
+                                            <Run Text="{Binding MemberCount}" /><Run Text=" members · by " /><Run
+                                                Text="{Binding OwnerDisplayName}" />
+                                        </TextBlock>
+                                    </StackPanel>
+                                </DockPanel>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </ScrollViewer>
+            </DockPanel>
+
+            <ContentControl Content="{Binding CurrentGroup}" IsVisible="{Binding IsShowingGroup}" />
+        </Panel>
+    </Grid>
+
+</UserControl>

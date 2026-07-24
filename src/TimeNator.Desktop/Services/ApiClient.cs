@@ -48,6 +48,41 @@ public class ApiClient(HttpClient http) : IApiClient
     public Task DeleteDayOffAsync(DateOnly date, CancellationToken cancellationToken = default) =>
         SendAsync(HttpMethod.Delete, $"api/day-offs/{date:yyyy-MM-dd}", null, cancellationToken);
 
+    public Task<List<GroupSummary>> GetMyGroupsAsync(CancellationToken cancellationToken = default) =>
+        GetAsync<List<GroupSummary>>("api/groups/mine", cancellationToken);
+
+    public Task<PagedResult<GroupSummary>> SearchGroupsAsync(string query, int page,
+        CancellationToken cancellationToken = default) =>
+        GetAsync<PagedResult<GroupSummary>>($"api/groups/search?q={Uri.EscapeDataString(query)}&page={page}",
+            cancellationToken);
+
+    public Task<GroupDetail> GetGroupAsync(Guid id, CancellationToken cancellationToken = default) =>
+        GetAsync<GroupDetail>($"api/groups/{id}", cancellationToken);
+
+    public Task<GroupDetail> CreateGroupAsync(CreateGroupRequest request, CancellationToken cancellationToken = default) =>
+        SendAsync<GroupDetail>(HttpMethod.Post, "api/groups", request, cancellationToken);
+
+    public Task DeleteGroupAsync(Guid id, CancellationToken cancellationToken = default) =>
+        SendAsync(HttpMethod.Delete, $"api/groups/{id}", null, cancellationToken);
+
+    public Task<GroupDetail> JoinGroupAsync(Guid id, string? password, CancellationToken cancellationToken = default) =>
+        SendAsync<GroupDetail>(HttpMethod.Post, $"api/groups/{id}/join", new JoinGroupRequest(password),
+            cancellationToken);
+
+    public Task LeaveGroupAsync(Guid id, CancellationToken cancellationToken = default) =>
+        SendAsync(HttpMethod.Post, $"api/groups/{id}/leave", null, cancellationToken);
+
+    public Task<List<GroupMemberItem>> GetGroupMembersAsync(Guid id, CancellationToken cancellationToken = default) =>
+        GetAsync<List<GroupMemberItem>>($"api/groups/{id}/members", cancellationToken);
+
+    public Task<InviteResponse> CreateInviteAsync(Guid groupId, CreateInviteRequest request,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<InviteResponse>(HttpMethod.Post, $"api/groups/{groupId}/invites", request, cancellationToken);
+
+    public Task<GroupDetail> AcceptInviteAsync(string code, CancellationToken cancellationToken = default) =>
+        SendAsync<GroupDetail>(HttpMethod.Post, $"api/groups/join/{Uri.EscapeDataString(code)}", null,
+            cancellationToken);
+
     private Task<T> GetAsync<T>(string path, CancellationToken cancellationToken) =>
         SendAsync<T>(HttpMethod.Get, path, null, cancellationToken);
 

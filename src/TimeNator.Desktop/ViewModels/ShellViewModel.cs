@@ -10,6 +10,7 @@ public partial class ShellViewModel(
     BackgroundAudioViewModel audio,
     SubjectsViewModel subjects,
     HistoryViewModel history,
+    GroupsViewModel groups,
     SettingsViewModel settings) : ViewModelBase
 {
     public string DisplayName => auth.DisplayName ?? "";
@@ -18,6 +19,7 @@ public partial class ShellViewModel(
     public BackgroundAudioViewModel Audio { get; } = audio;
     public SubjectsViewModel Subjects { get; } = subjects;
     public HistoryViewModel History { get; } = history;
+    public GroupsViewModel Groups { get; } = groups;
     public SettingsViewModel Settings { get; } = settings;
 
     public override async Task ActivateAsync()
@@ -25,6 +27,7 @@ public partial class ShellViewModel(
         await Timer.ActivateAsync();
         await Subjects.LoadCommand.ExecuteAsync(null);
         await History.LoadCommand.ExecuteAsync(null);
+        await Groups.ActivateAsync();
     }
 
     [RelayCommand]

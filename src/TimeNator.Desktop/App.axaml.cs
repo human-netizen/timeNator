@@ -45,6 +45,7 @@ public partial class App : Application
         services.AddTransient<BackgroundAudioViewModel>();
         services.AddSingleton<ILoopingSound, LoopingSound>();
         services.AddTransient<HistoryViewModel>();
+        services.AddTransient<GroupsViewModel>();
         services.AddTransient<ManualEntryViewModel>();
         services.AddTransient<SettingsViewModel>();
         services.AddSingleton<SettingsStore>();
