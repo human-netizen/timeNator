@@ -7,4 +7,5 @@ public interface IStudyClient
 {
     Task MemberStarted(Guid groupId, MemberPresence presence);
     Task MemberStopped(Guid groupId, Guid userId);
+    Task LeaderboardUpdated(List<LeaderboardEntry> entries);
 }

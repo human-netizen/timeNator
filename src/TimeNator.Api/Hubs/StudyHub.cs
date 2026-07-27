@@ -19,6 +19,9 @@ public class StudyHub(GroupService groups, SubjectService subjects, PresenceServ
 {
     public static string GroupName(Guid groupId) => $"group:{groupId}";
 
+    /// <summary>Clients with the leaderboard open. Only they receive board updates.</summary>
+    public const string LeaderboardGroup = "leaderboard";
+
     private Guid UserId => Context.User!.GetUserId();
 
     public override async Task OnConnectedAsync()
@@ -66,4 +69,8 @@ public class StudyHub(GroupService groups, SubjectService subjects, PresenceServ
     /// it says nothing about how long the user studied, which the server never verifies.
     /// </summary>
     public Task KeepPresence() => presence.RefreshAsync(UserId);
+
+    public Task SubscribeLeaderboard() => Groups.AddToGroupAsync(Context.ConnectionId, LeaderboardGroup);
+
+    public Task UnsubscribeLeaderboard() => Groups.RemoveFromGroupAsync(Context.ConnectionId, LeaderboardGroup);
 }

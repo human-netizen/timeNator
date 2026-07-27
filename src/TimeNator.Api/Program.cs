@@ -80,6 +80,7 @@ var redisConnection = builder.Configuration.GetConnectionString("Redis")
                       ?? throw new InvalidOperationException("Connection string 'Redis' is not configured.");
 builder.Services.AddSingleton<IConnectionMultiplexer>(_ => ConnectionMultiplexer.Connect(redisConnection));
 builder.Services.AddSingleton<PresenceService>();
+builder.Services.AddScoped<LeaderboardService>();
 builder.Services.AddScoped<IPasswordHasher<Group>, PasswordHasher<Group>>();
 
 builder.Services.AddHealthChecks().AddDbContextCheck<AppDbContext>("database");

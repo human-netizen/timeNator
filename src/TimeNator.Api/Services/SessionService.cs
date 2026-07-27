@@ -1,6 +1,8 @@
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using TimeNator.Api.Data;
 using TimeNator.Api.Entities;
+using TimeNator.Api.Hubs;
 using TimeNator.Api.Validation;
 using TimeNator.Shared.Dtos;
 
@@ -8,7 +10,11 @@ namespace TimeNator.Api.Services;
 
 public record SessionCreateResult(SessionResponse? Session, List<RuleViolation> Violations);
 
-public class SessionService(AppDbContext db, TimeProvider clock)
+public class SessionService(
+    AppDbContext db,
+    LeaderboardService leaderboard,
+    IHubContext<StudyHub, IStudyClient> hub,
+    TimeProvider clock)
 {
     public Task<List<SessionResponse>> ListAsync(
         Guid userId, DateTimeOffset from, DateTimeOffset to, CancellationToken cancellationToken)
@@ -67,10 +73,25 @@ public class SessionService(AppDbContext db, TimeProvider clock)
         };
         db.StudySessions.Add(session);
         await db.SaveChangesAsync(cancellationToken);
+        await UpdateLeaderboardAsync(userId, session, cancellationToken);
 
         return new(new SessionResponse(
             session.Id, subject.Id, subject.Name, subject.ColorHex, session.StartedAt, session.EndedAt,
             session.DurationSeconds, session.PausedSeconds, session.Mode, session.Source,
             session.MaxStreakSeconds), []);
+    }
+
+    /// <summary>
+    /// Credits the session to its day and, when that changes today's visible top 50,
+    /// pushes the new board to clients that have it open. Once there are more than fifty
+    /// users, most saves change nothing visible and so broadcast nothing.
+    /// </summary>
+    private async Task UpdateLeaderboardAsync(Guid userId, StudySession session, CancellationToken cancellationToken)
+    {
+        var day = LeaderboardService.DayOf(session.StartedAt);
+        var changed = await leaderboard.RecordAsync(userId, day, session.DurationSeconds, cancellationToken);
+        if (changed && day == LeaderboardService.DayOf(clock.GetUtcNow()))
+            await hub.Clients.Group(StudyHub.LeaderboardGroup)
+                .LeaderboardUpdated(await leaderboard.GetTopAsync(day, cancellationToken));
     }
 }
