@@ -20,10 +20,11 @@
                 <TextBlock Text="{Binding DisplayName}" VerticalAlignment="Center" FontWeight="SemiBold" />
             </DockPanel>
         </Border>
-        <TabControl Padding="0">
+        <TabControl Padding="0" SelectedIndex="{Binding SelectedTab}">
             <TabItem Header="Timer" Content="{Binding Timer}" />
             <TabItem Header="History" Content="{Binding History}" />
             <TabItem Header="Groups" Content="{Binding Groups}" />
+            <TabItem Header="Leaderboard" Content="{Binding Leaderboard}" />
             <TabItem Header="Subjects" Content="{Binding Subjects}" />
             <TabItem Header="Settings" Content="{Binding Settings}" />
         </TabControl>

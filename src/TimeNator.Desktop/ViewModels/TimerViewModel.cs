@@ -13,21 +13,26 @@ namespace TimeNator.Desktop.ViewModels;
 public partial class TimerViewModel : ViewModelBase
 {
     private static readonly TimeSpan JournalInterval = TimeSpan.FromSeconds(30);
+    private static readonly TimeSpan PresenceInterval = TimeSpan.FromMinutes(2);
 
     private readonly SessionJournal _journal;
     private readonly SessionUploader _uploader;
     private readonly IIdleDetector _idle;
     private readonly SettingsStore _settings;
     private readonly IWindowService _windows;
+    private readonly IStudyHubClient _hub;
     private readonly TimeProvider _clock;
     private readonly StudyTimer _timer;
     private readonly DispatcherTimer _tick;
     private DateTimeOffset _lastJournaled;
     private SessionMode _runningMode;
     private PomodoroCycle? _pomodoro;
+    private bool _announcedStudying;
+    private DateTimeOffset _lastPresencePing;
 
     public TimerViewModel(SubjectCatalog catalog, SessionJournal journal, SessionUploader uploader,
-        IIdleDetector idle, SettingsStore settings, IWindowService windows, TimeProvider clock)
+        IIdleDetector idle, SettingsStore settings, IWindowService windows, IStudyHubClient hub,
+        TimeProvider clock)
     {
         _journal = journal;
         _uploader = uploader;
@@ -35,6 +40,7 @@ public partial class TimerViewModel : ViewModelBase
         _idle = idle;
         _settings = settings;
         _windows = windows;
+        _hub = hub;
         _timer = new StudyTimer(clock);
         Subjects = catalog.Subjects;
         _tick = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(250) };
@@ -234,6 +240,12 @@ public partial class TimerViewModel : ViewModelBase
             return;
         }
 
+        if (_timer.State == TimerState.Running && _clock.GetUtcNow() - _lastPresencePing >= PresenceInterval)
+        {
+            _lastPresencePing = _clock.GetUtcNow();
+            _ = _hub.KeepPresenceAsync();
+        }
+
         if (_clock.GetUtcNow() - _lastJournaled >= JournalInterval)
             Journal();
         Refresh();
@@ -255,6 +267,7 @@ public partial class TimerViewModel : ViewModelBase
     private void Refresh()
     {
         State = _timer.State;
+        AnnouncePresence();
         if (State == TimerState.Idle)
         {
             ClockText = SelectedMode switch
@@ -292,6 +305,20 @@ public partial class TimerViewModel : ViewModelBase
     partial void OnSelectedModeChanged(SessionMode value) => Refresh();
 
     partial void OnCountdownMinutesChanged(decimal? value) => Refresh();
+
+    /// <summary>
+    /// Tells group members whether we are studying. Paused counts as not studying, so
+    /// breaks and idle pauses show up for others too. Sent only when the answer changes.
+    /// </summary>
+    private void AnnouncePresence()
+    {
+        var studying = State == TimerState.Running;
+        if (studying == _announcedStudying)
+            return;
+        _announcedStudying = studying;
+        _lastPresencePing = _clock.GetUtcNow();
+        _ = studying ? _hub.StartedStudyingAsync(SelectedSubject!.Id, _runningMode) : _hub.StoppedStudyingAsync();
+    }
 
     private static string Format(TimeSpan span) => $"{(int)span.TotalHours:00}:{span.Minutes:00}:{span.Seconds:00}";
 }

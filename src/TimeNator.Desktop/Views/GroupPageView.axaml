@@ -1,7 +1,7 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="using:TimeNator.Desktop.ViewModels"
-             xmlns:dto="using:TimeNator.Shared.Dtos"
+             xmlns:conv="using:TimeNator.Desktop.Converters"
              x:Class="TimeNator.Desktop.Views.GroupPageView"
              x:DataType="vm:GroupPageViewModel">
 
@@ -25,14 +25,29 @@
                        IsVisible="{Binding Error, Converter={x:Static ObjectConverters.IsNotNull}}" />
         </StackPanel>
 
+        <TextBlock DockPanel.Dock="Top" Text="{Binding StudyingText}" Opacity="0.6" Margin="0,0,0,8" />
+
         <ScrollViewer>
             <ItemsControl ItemsSource="{Binding Members}">
                 <ItemsControl.ItemTemplate>
-                    <DataTemplate x:DataType="dto:GroupMemberItem">
-                        <DockPanel Margin="0,4">
-                            <TextBlock DockPanel.Dock="Right" Text="{Binding Role}" Opacity="0.5" />
-                            <TextBlock Text="{Binding DisplayName}" />
-                        </DockPanel>
+                    <DataTemplate x:DataType="vm:MemberRowViewModel">
+                        <Border Margin="0,3" Padding="12,8" CornerRadius="6" Background="#14FFFFFF">
+                            <DockPanel>
+                                <TextBlock DockPanel.Dock="Right" Text="{Binding ElapsedText}" FontSize="18"
+                                           FontWeight="Light" VerticalAlignment="Center" />
+                                <Ellipse Width="10" Height="10" Margin="0,0,12,0" VerticalAlignment="Center"
+                                         Fill="{Binding SubjectColorHex, Converter={x:Static conv:HexToBrushConverter.Instance}}"
+                                         Opacity="{Binding IsStudying, Converter={x:Static conv:BoolConverters.ToOpacity}}" />
+                                <StackPanel>
+                                    <StackPanel Orientation="Horizontal" Spacing="6">
+                                        <TextBlock Text="{Binding DisplayName}" FontWeight="SemiBold" />
+                                        <TextBlock Text="owner" Opacity="0.5" FontSize="11" VerticalAlignment="Center"
+                                                   IsVisible="{Binding IsOwner}" />
+                                    </StackPanel>
+                                    <TextBlock Text="{Binding SubjectName}" Opacity="0.6" FontSize="12" />
+                                </StackPanel>
+                            </DockPanel>
+                        </Border>
                     </DataTemplate>
                 </ItemsControl.ItemTemplate>
             </ItemsControl>

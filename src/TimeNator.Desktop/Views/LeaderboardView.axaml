@@ -1,0 +1,37 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:TimeNator.Desktop.ViewModels"
+             xmlns:conv="using:TimeNator.Desktop.Converters"
+             x:Class="TimeNator.Desktop.Views.LeaderboardView"
+             x:DataType="vm:LeaderboardViewModel">
+
+    <DockPanel Margin="24" Width="520" HorizontalAlignment="Left">
+        <StackPanel DockPanel.Dock="Top" Spacing="6" Margin="0,0,0,12">
+            <DockPanel>
+                <Button DockPanel.Dock="Right" Content="Refresh" Command="{Binding RefreshCommand}" />
+                <TextBlock Text="Today's top 50" FontSize="22" FontWeight="SemiBold" />
+            </DockPanel>
+            <TextBlock Text="Every user, ranked by time studied today (UTC). Updates live." Opacity="0.6" />
+            <TextBlock Text="{Binding Error}" Foreground="IndianRed"
+                       IsVisible="{Binding Error, Converter={x:Static ObjectConverters.IsNotNull}}" />
+        </StackPanel>
+
+        <ScrollViewer>
+            <ItemsControl ItemsSource="{Binding Rows}">
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate x:DataType="vm:LeaderboardRow">
+                        <Border Margin="0,2" Padding="12,6" CornerRadius="6"
+                                Background="{Binding IsMe, Converter={x:Static conv:BoolConverters.ToHighlight}}">
+                            <DockPanel>
+                                <TextBlock DockPanel.Dock="Left" Text="{Binding Rank}" Width="40" Opacity="0.6" />
+                                <TextBlock DockPanel.Dock="Right" Text="{Binding Duration}" FontWeight="SemiBold" />
+                                <TextBlock Text="{Binding DisplayName}" />
+                            </DockPanel>
+                        </Border>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </ScrollViewer>
+    </DockPanel>
+
+</UserControl>

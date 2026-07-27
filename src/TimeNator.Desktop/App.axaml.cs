@@ -31,6 +31,9 @@ public partial class App : Application
             sp.GetRequiredService<TokenStore>(),
             sp.GetRequiredService<TimeProvider>()));
 
+        services.AddSingleton<IStudyHubClient>(sp =>
+            new StudyHubClient(ApiBaseAddress, sp.GetRequiredService<IAuthService>()));
+
         services.AddTransient<AuthHeaderHandler>();
         services.AddHttpClient<IApiClient, ApiClient>(http => http.BaseAddress = ApiBaseAddress)
             .AddHttpMessageHandler<AuthHeaderHandler>();
@@ -46,6 +49,7 @@ public partial class App : Application
         services.AddSingleton<ILoopingSound, LoopingSound>();
         services.AddTransient<HistoryViewModel>();
         services.AddTransient<GroupsViewModel>();
+        services.AddTransient<LeaderboardViewModel>();
         services.AddTransient<ManualEntryViewModel>();
         services.AddTransient<SettingsViewModel>();
         services.AddSingleton<SettingsStore>();

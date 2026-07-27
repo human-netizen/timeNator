@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using TimeNator.Desktop.Services;
@@ -7,12 +8,32 @@ using TimeNator.Shared.Dtos;
 
 namespace TimeNator.Desktop.ViewModels;
 
-/// <summary>One group as seen by one of its members.</summary>
-public partial class GroupPageViewModel(IApiClient api, Guid groupId, Action onRemoved) : ViewModelBase
+/// <summary>One group as seen by one of its members, with live study status.</summary>
+public partial class GroupPageViewModel : ViewModelBase, IDisposable
 {
-    public Guid GroupId { get; } = groupId;
+    private readonly IApiClient _api;
+    private readonly IStudyHubClient _hub;
+    private readonly TimeProvider _clock;
+    private readonly Action _onRemoved;
+    private readonly DispatcherTimer _tick;
 
-    public ObservableCollection<GroupMemberItem> Members { get; } = [];
+    public GroupPageViewModel(IApiClient api, IStudyHubClient hub, TimeProvider clock, Guid groupId,
+        Action onRemoved)
+    {
+        _api = api;
+        _hub = hub;
+        _clock = clock;
+        _onRemoved = onRemoved;
+        GroupId = groupId;
+        _tick = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };
+        _tick.Tick += (_, _) => TickAll();
+        _hub.MemberStarted += OnMemberStarted;
+        _hub.MemberStopped += OnMemberStopped;
+    }
+
+    public Guid GroupId { get; }
+
+    public ObservableCollection<MemberRowViewModel> Members { get; } = [];
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(IsOwner), nameof(Name), nameof(Description), nameof(Announcement),
@@ -21,6 +42,7 @@ public partial class GroupPageViewModel(IApiClient api, Guid groupId, Action onR
 
     [ObservableProperty] public partial string? InviteText { get; private set; }
     [ObservableProperty] public partial string? Error { get; private set; }
+    [ObservableProperty] public partial string StudyingText { get; private set; } = "";
 
     public string Name => Detail?.Name ?? "";
     public string? Description => Detail?.Description;
@@ -32,10 +54,16 @@ public partial class GroupPageViewModel(IApiClient api, Guid groupId, Action onR
     {
         try
         {
-            Detail = await api.GetGroupAsync(GroupId);
+            Detail = await _api.GetGroupAsync(GroupId);
+            var members = await _api.GetGroupMembersAsync(GroupId);
+            var presence = (await _api.GetGroupPresenceAsync(GroupId)).ToDictionary(p => p.UserId);
+
             Members.Clear();
-            foreach (var member in await api.GetGroupMembersAsync(GroupId))
-                Members.Add(member);
+            foreach (var member in members)
+                Members.Add(new MemberRowViewModel(member) { Presence = presence.GetValueOrDefault(member.UserId) });
+            SortMembers();
+            TickAll();
+            _tick.Start();
         }
         catch (ApiException ex)
         {
@@ -48,7 +76,7 @@ public partial class GroupPageViewModel(IApiClient api, Guid groupId, Action onR
     {
         try
         {
-            var invite = await api.CreateInviteAsync(GroupId, new CreateInviteRequest(72, null));
+            var invite = await _api.CreateInviteAsync(GroupId, new CreateInviteRequest(72, null));
             InviteText = $"Invite code {invite.Code}, valid for 3 days.";
         }
         catch (ApiException ex)
@@ -63,14 +91,72 @@ public partial class GroupPageViewModel(IApiClient api, Guid groupId, Action onR
         try
         {
             if (IsOwner)
-                await api.DeleteGroupAsync(GroupId);
+                await _api.DeleteGroupAsync(GroupId);
             else
-                await api.LeaveGroupAsync(GroupId);
-            onRemoved();
+                await _api.LeaveGroupAsync(GroupId);
+            _onRemoved();
         }
         catch (ApiException ex)
         {
             Error = ex.Message;
         }
+    }
+
+    private void OnMemberStarted(Guid groupId, MemberPresence presence)
+    {
+        if (groupId != GroupId)
+            return;
+        Dispatcher.UIThread.Post(() =>
+        {
+            if (Members.FirstOrDefault(m => m.UserId == presence.UserId) is { } row)
+                row.Presence = presence;
+            SortMembers();
+            TickAll();
+        });
+    }
+
+    private void OnMemberStopped(Guid groupId, Guid userId)
+    {
+        if (groupId != GroupId)
+            return;
+        Dispatcher.UIThread.Post(() =>
+        {
+            if (Members.FirstOrDefault(m => m.UserId == userId) is { } row)
+                row.Presence = null;
+            SortMembers();
+            TickAll();
+        });
+    }
+
+    /// <summary>Studying members first, longest-running on top; then everyone else by name.</summary>
+    private void SortMembers()
+    {
+        var sorted = Members
+            .OrderByDescending(m => m.IsStudying)
+            .ThenBy(m => m.Presence?.StartedAt ?? DateTimeOffset.MaxValue)
+            .ThenBy(m => m.DisplayName)
+            .ToList();
+        for (var i = 0; i < sorted.Count; i++)
+        {
+            var current = Members.IndexOf(sorted[i]);
+            if (current != i)
+                Members.Move(current, i);
+        }
+    }
+
+    private void TickAll()
+    {
+        var now = _clock.GetUtcNow();
+        foreach (var member in Members)
+            member.Tick(now);
+        var studying = Members.Count(m => m.IsStudying);
+        StudyingText = $"{studying} of {Members.Count} studying now";
+    }
+
+    public void Dispose()
+    {
+        _tick.Stop();
+        _hub.MemberStarted -= OnMemberStarted;
+        _hub.MemberStopped -= OnMemberStopped;
     }
 }

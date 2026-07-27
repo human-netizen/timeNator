@@ -15,7 +15,7 @@ public enum GroupsPanel
 }
 
 /// <summary>The groups tab: my groups on the left; create, find, or one group on the right.</summary>
-public partial class GroupsViewModel(IApiClient api) : ViewModelBase
+public partial class GroupsViewModel(IApiClient api, IStudyHubClient hub, TimeProvider clock) : ViewModelBase
 {
     public ObservableCollection<GroupSummary> MyGroups { get; } = [];
     public ObservableCollection<GroupSummary> SearchResults { get; } = [];
@@ -82,6 +82,7 @@ public partial class GroupsViewModel(IApiClient api) : ViewModelBase
             !NewIsPrivate, NewIsPrivate ? NewPassword : null));
         NewName = NewDescription = NewPassword = "";
         NewIsPrivate = false;
+        await hub.JoinMyGroupsAsync();
         await LoadAsync(created.Id);
     });
 
@@ -105,6 +106,7 @@ public partial class GroupsViewModel(IApiClient api) : ViewModelBase
     {
         await api.JoinGroupAsync(group.Id, string.IsNullOrEmpty(JoinPassword) ? null : JoinPassword);
         JoinPassword = "";
+        await hub.JoinMyGroupsAsync();
         await LoadAsync(group.Id);
     });
 
@@ -113,8 +115,11 @@ public partial class GroupsViewModel(IApiClient api) : ViewModelBase
     {
         var joined = await api.AcceptInviteAsync(InviteCode.Trim());
         InviteCode = "";
+        await hub.JoinMyGroupsAsync();
         await LoadAsync(joined.Id);
     });
+
+    partial void OnSelectedGroupChanging(GroupSummary? value) => CurrentGroup?.Dispose();
 
     partial void OnSelectedGroupChanged(GroupSummary? value)
     {
@@ -126,7 +131,7 @@ public partial class GroupsViewModel(IApiClient api) : ViewModelBase
             return;
         }
 
-        CurrentGroup = new GroupPageViewModel(api, value.Id, () => _ = LoadAsync());
+        CurrentGroup = new GroupPageViewModel(api, hub, clock, value.Id, () => _ = LoadAsync());
         Panel = GroupsPanel.Group;
         _ = CurrentGroup.ActivateAsync();
     }

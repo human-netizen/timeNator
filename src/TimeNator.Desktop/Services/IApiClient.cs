@@ -30,7 +30,10 @@ public interface IApiClient
     Task<GroupDetail> JoinGroupAsync(Guid id, string? password, CancellationToken cancellationToken = default);
     Task LeaveGroupAsync(Guid id, CancellationToken cancellationToken = default);
     Task<List<GroupMemberItem>> GetGroupMembersAsync(Guid id, CancellationToken cancellationToken = default);
+    Task<List<MemberPresence>> GetGroupPresenceAsync(Guid id, CancellationToken cancellationToken = default);
     Task<InviteResponse> CreateInviteAsync(Guid groupId, CreateInviteRequest request,
         CancellationToken cancellationToken = default);
     Task<GroupDetail> AcceptInviteAsync(string code, CancellationToken cancellationToken = default);
+
+    Task<List<LeaderboardEntry>> GetLeaderboardAsync(CancellationToken cancellationToken = default);
 }
