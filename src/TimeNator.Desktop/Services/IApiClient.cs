@@ -35,5 +35,8 @@ public interface IApiClient
         CancellationToken cancellationToken = default);
     Task<GroupDetail> AcceptInviteAsync(string code, CancellationToken cancellationToken = default);
 
+    Task<List<GroupMessageItem>> GetGroupMessagesAsync(Guid groupId, Guid? before,
+        CancellationToken cancellationToken = default);
+
     Task<List<LeaderboardEntry>> GetLeaderboardAsync(CancellationToken cancellationToken = default);
 }

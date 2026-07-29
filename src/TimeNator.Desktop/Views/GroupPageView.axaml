@@ -27,7 +27,8 @@
 
         <TextBlock DockPanel.Dock="Top" Text="{Binding StudyingText}" Opacity="0.6" Margin="0,0,0,8" />
 
-        <ScrollViewer>
+        <Grid ColumnDefinitions="*,16,320">
+        <ScrollViewer Grid.Column="0">
             <ItemsControl ItemsSource="{Binding Members}">
                 <ItemsControl.ItemTemplate>
                     <DataTemplate x:DataType="vm:MemberRowViewModel">
@@ -52,6 +53,9 @@
                 </ItemsControl.ItemTemplate>
             </ItemsControl>
         </ScrollViewer>
+
+        <ContentControl Grid.Column="2" Content="{Binding Chat}" />
+        </Grid>
     </DockPanel>
 
 </UserControl>

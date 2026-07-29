@@ -14,7 +14,7 @@ namespace TimeNator.Api.Hubs;
 /// group named group:{id}, joined on connect.
 /// </summary>
 [Authorize]
-public class StudyHub(GroupService groups, SubjectService subjects, PresenceService presence)
+public class StudyHub(GroupService groups, SubjectService subjects, PresenceService presence, ChatService chat)
     : Hub<IStudyClient>
 {
     public static string GroupName(Guid groupId) => $"group:{groupId}";
@@ -69,6 +69,14 @@ public class StudyHub(GroupService groups, SubjectService subjects, PresenceServ
     /// it says nothing about how long the user studied, which the server never verifies.
     /// </summary>
     public Task KeepPresence() => presence.RefreshAsync(UserId);
+
+    public async Task SendMessage(Guid groupId, string body)
+    {
+        var sent = await chat.SendAsync(UserId, groupId, body, Context.ConnectionAborted);
+        if (sent.Error is not null)
+            throw new HubException(sent.Message);
+        await Clients.Group(GroupName(groupId)).MessageReceived(groupId, sent.Value!);
+    }
 
     public Task SubscribeLeaderboard() => Groups.AddToGroupAsync(Context.ConnectionId, LeaderboardGroup);
 

@@ -1,0 +1,45 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:TimeNator.Desktop.ViewModels"
+             xmlns:conv="using:TimeNator.Desktop.Converters"
+             x:Class="TimeNator.Desktop.Views.ChatView"
+             x:DataType="vm:ChatViewModel">
+
+    <Border Background="#0FFFFFFF" CornerRadius="8" Padding="10">
+        <DockPanel>
+            <TextBlock DockPanel.Dock="Top" Text="Chat" FontWeight="SemiBold" Margin="0,0,0,6" />
+            <StackPanel DockPanel.Dock="Bottom" Spacing="6" Margin="0,8,0,0">
+                <TextBlock Text="{Binding Error}" Foreground="IndianRed" TextWrapping="Wrap" FontSize="12"
+                           IsVisible="{Binding Error, Converter={x:Static ObjectConverters.IsNotNull}}" />
+                <DockPanel>
+                    <Button DockPanel.Dock="Right" Content="Send" Command="{Binding SendCommand}" Margin="6,0,0,0"
+                            IsDefault="True" />
+                    <TextBox PlaceholderText="Message" Text="{Binding Draft}" MaxLength="1000" />
+                </DockPanel>
+            </StackPanel>
+            <ScrollViewer>
+                <StackPanel>
+                    <Button Content="Load older" Command="{Binding LoadOlderCommand}"
+                            IsVisible="{Binding CanLoadOlder}" HorizontalAlignment="Center" Margin="0,0,0,6" />
+                    <ItemsControl ItemsSource="{Binding Lines}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate x:DataType="vm:ChatLine">
+                                <Border Margin="0,3" Padding="8,5" CornerRadius="6"
+                                        Background="{Binding IsMine, Converter={x:Static conv:BoolConverters.ToHighlight}}">
+                                    <StackPanel>
+                                        <StackPanel Orientation="Horizontal" Spacing="6">
+                                            <TextBlock Text="{Binding Author}" FontWeight="SemiBold" FontSize="12" />
+                                            <TextBlock Text="{Binding Time}" Opacity="0.5" FontSize="11" />
+                                        </StackPanel>
+                                        <SelectableTextBlock Text="{Binding Body}" TextWrapping="Wrap" />
+                                    </StackPanel>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
+            </ScrollViewer>
+        </DockPanel>
+    </Border>
+
+</UserControl>

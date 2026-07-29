@@ -35,3 +35,5 @@ public record GroupMemberItem(
 public record CreateInviteRequest(int? ExpiresInHours, int? MaxUses);
 
 public record InviteResponse(string Code, DateTimeOffset? ExpiresAt, int? MaxUses, int UseCount);
+
+public record GroupMessageItem(Guid Id, Guid GroupId, Guid UserId, string DisplayName, string Body, DateTimeOffset SentAt);

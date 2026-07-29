@@ -15,7 +15,8 @@ public enum GroupsPanel
 }
 
 /// <summary>The groups tab: my groups on the left; create, find, or one group on the right.</summary>
-public partial class GroupsViewModel(IApiClient api, IStudyHubClient hub, TimeProvider clock) : ViewModelBase
+public partial class GroupsViewModel(IApiClient api, IStudyHubClient hub, IAuthService auth, TimeProvider clock)
+    : ViewModelBase
 {
     public ObservableCollection<GroupSummary> MyGroups { get; } = [];
     public ObservableCollection<GroupSummary> SearchResults { get; } = [];
@@ -131,7 +132,7 @@ public partial class GroupsViewModel(IApiClient api, IStudyHubClient hub, TimePr
             return;
         }
 
-        CurrentGroup = new GroupPageViewModel(api, hub, clock, value.Id, () => _ = LoadAsync());
+        CurrentGroup = new GroupPageViewModel(api, hub, auth, clock, value.Id, () => _ = LoadAsync());
         Panel = GroupsPanel.Group;
         _ = CurrentGroup.ActivateAsync();
     }

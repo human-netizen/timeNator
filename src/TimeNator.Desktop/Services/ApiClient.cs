@@ -72,6 +72,12 @@ public class ApiClient(HttpClient http) : IApiClient
     public Task LeaveGroupAsync(Guid id, CancellationToken cancellationToken = default) =>
         SendAsync(HttpMethod.Post, $"api/groups/{id}/leave", null, cancellationToken);
 
+    public Task<List<GroupMessageItem>> GetGroupMessagesAsync(Guid groupId, Guid? before,
+        CancellationToken cancellationToken = default) =>
+        GetAsync<List<GroupMessageItem>>(
+            before is { } cursor ? $"api/groups/{groupId}/messages?before={cursor}" : $"api/groups/{groupId}/messages",
+            cancellationToken);
+
     public Task<List<LeaderboardEntry>> GetLeaderboardAsync(CancellationToken cancellationToken = default) =>
         GetAsync<List<LeaderboardEntry>>("api/leaderboard", cancellationToken);
 

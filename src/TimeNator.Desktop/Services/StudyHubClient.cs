@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.AspNetCore.SignalR.Client;
 using TimeNator.Shared;
 using TimeNator.Shared.Dtos;
@@ -9,6 +10,7 @@ public interface IStudyHubClient
     event Action<Guid, MemberPresence>? MemberStarted;
     event Action<Guid, Guid>? MemberStopped;
     event Action<List<LeaderboardEntry>>? LeaderboardUpdated;
+    event Action<Guid, GroupMessageItem>? MessageReceived;
 
     Task ConnectAsync();
     Task DisconnectAsync();
@@ -18,6 +20,9 @@ public interface IStudyHubClient
     Task JoinMyGroupsAsync();
     Task SubscribeLeaderboardAsync();
     Task UnsubscribeLeaderboardAsync();
+
+    /// <summary>Throws <see cref="HubException"/> with a readable reason when the server refuses.</summary>
+    Task SendMessageAsync(Guid groupId, string body);
 }
 
 /// <summary>
@@ -44,6 +49,7 @@ public class StudyHubClient : IStudyHubClient
         _connection.On<Guid, MemberPresence>("MemberStarted", (g, p) => MemberStarted?.Invoke(g, p));
         _connection.On<Guid, Guid>("MemberStopped", (g, u) => MemberStopped?.Invoke(g, u));
         _connection.On<List<LeaderboardEntry>>("LeaderboardUpdated", e => LeaderboardUpdated?.Invoke(e));
+        _connection.On<Guid, GroupMessageItem>("MessageReceived", (g, m) => MessageReceived?.Invoke(g, m));
         _connection.Reconnected += async _ =>
         {
             if (_studying is { } s)
@@ -56,6 +62,7 @@ public class StudyHubClient : IStudyHubClient
     public event Action<Guid, MemberPresence>? MemberStarted;
     public event Action<Guid, Guid>? MemberStopped;
     public event Action<List<LeaderboardEntry>>? LeaderboardUpdated;
+    public event Action<Guid, GroupMessageItem>? MessageReceived;
 
     public async Task ConnectAsync()
     {
@@ -105,6 +112,11 @@ public class StudyHubClient : IStudyHubClient
         _leaderboardOpen = false;
         return SendAsync("UnsubscribeLeaderboard");
     }
+
+    public Task SendMessageAsync(Guid groupId, string body) =>
+        _connection.State == HubConnectionState.Connected
+            ? _connection.InvokeAsync("SendMessage", groupId, body)
+            : throw new HubException("Not connected to the server.");
 
     private async Task SendAsync(string method, params object?[] args)
     {

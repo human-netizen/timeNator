@@ -17,14 +17,15 @@ public partial class GroupPageViewModel : ViewModelBase, IDisposable
     private readonly Action _onRemoved;
     private readonly DispatcherTimer _tick;
 
-    public GroupPageViewModel(IApiClient api, IStudyHubClient hub, TimeProvider clock, Guid groupId,
-        Action onRemoved)
+    public GroupPageViewModel(IApiClient api, IStudyHubClient hub, IAuthService auth, TimeProvider clock,
+        Guid groupId, Action onRemoved)
     {
         _api = api;
         _hub = hub;
         _clock = clock;
         _onRemoved = onRemoved;
         GroupId = groupId;
+        Chat = new ChatViewModel(api, hub, auth, clock, groupId);
         _tick = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };
         _tick.Tick += (_, _) => TickAll();
         _hub.MemberStarted += OnMemberStarted;
@@ -32,6 +33,8 @@ public partial class GroupPageViewModel : ViewModelBase, IDisposable
     }
 
     public Guid GroupId { get; }
+
+    public ChatViewModel Chat { get; }
 
     public ObservableCollection<MemberRowViewModel> Members { get; } = [];
 
@@ -64,6 +67,7 @@ public partial class GroupPageViewModel : ViewModelBase, IDisposable
             SortMembers();
             TickAll();
             _tick.Start();
+            await Chat.ActivateAsync();
         }
         catch (ApiException ex)
         {
@@ -158,5 +162,6 @@ public partial class GroupPageViewModel : ViewModelBase, IDisposable
         _tick.Stop();
         _hub.MemberStarted -= OnMemberStarted;
         _hub.MemberStopped -= OnMemberStopped;
+        Chat.Dispose();
     }
 }

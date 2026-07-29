@@ -75,6 +75,7 @@ builder.Services.AddScoped<SessionService>();
 builder.Services.AddScoped<DayOffService>();
 builder.Services.AddScoped<GroupService>();
 builder.Services.AddScoped<InviteService>();
+builder.Services.AddScoped<ChatService>();
 
 var redisConnection = builder.Configuration.GetConnectionString("Redis")
                       ?? throw new InvalidOperationException("Connection string 'Redis' is not configured.");
