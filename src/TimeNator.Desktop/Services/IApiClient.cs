@@ -38,5 +38,10 @@ public interface IApiClient
     Task<List<GroupMessageItem>> GetGroupMessagesAsync(Guid groupId, Guid? before,
         CancellationToken cancellationToken = default);
 
+    Task<GroupDetail> UpdateGroupAsync(Guid id, UpdateGroupRequest request, CancellationToken cancellationToken = default);
+    Task SetChatPermissionAsync(Guid groupId, Guid userId, bool canChat, CancellationToken cancellationToken = default);
+    Task KickAsync(Guid groupId, Guid userId, CancellationToken cancellationToken = default);
+    Task BlacklistAsync(Guid groupId, Guid userId, CancellationToken cancellationToken = default);
+
     Task<List<LeaderboardEntry>> GetLeaderboardAsync(CancellationToken cancellationToken = default);
 }

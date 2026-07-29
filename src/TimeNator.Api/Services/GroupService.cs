@@ -105,6 +105,8 @@ public class GroupService(AppDbContext db, IPasswordHasher<Group> hasher, TimePr
     public async Task<ServiceResult<GroupDetail>> AddMemberAsync(Guid userId, Group group,
         CancellationToken cancellationToken)
     {
+        if (await db.GroupBlacklist.AnyAsync(b => b.GroupId == group.Id && b.UserId == userId, cancellationToken))
+            return ServiceResult<GroupDetail>.Fail(ServiceError.Forbidden, "You have been barred from this group.");
         if (await db.GroupMembers.AnyAsync(m => m.GroupId == group.Id && m.UserId == userId, cancellationToken))
             return ServiceResult<GroupDetail>.Fail(ServiceError.Conflict, "You are already a member.");
 
@@ -151,11 +153,16 @@ public class GroupService(AppDbContext db, IPasswordHasher<Group> hasher, TimePr
         if (!await IsMemberAsync(userId, groupId, cancellationToken))
             return ServiceResult<List<GroupMemberItem>>.Fail(ServiceError.NotFound, "Group not found.");
 
+        // Today's seconds per member, for the group's minimum daily requirement (UTC day, as the leaderboard).
+        var dayStart = new DateTimeOffset(clock.GetUtcNow().UtcDateTime.Date, TimeSpan.Zero);
         var members = await db.GroupMembers
             .Where(m => m.GroupId == groupId)
             .OrderBy(m => m.Role).ThenBy(m => m.User.DisplayName)
             .Select(m => new GroupMemberItem(m.UserId, m.User.DisplayName, m.User.AvatarKey, m.Role, m.CanChat,
-                m.JoinedAt))
+                m.JoinedAt,
+                db.StudySessions
+                    .Where(s => s.UserId == m.UserId && s.StartedAt >= dayStart)
+                    .Sum(s => s.DurationSeconds)))
             .ToListAsync(cancellationToken);
         return ServiceResult<List<GroupMemberItem>>.Ok(members);
     }

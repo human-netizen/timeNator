@@ -30,10 +30,22 @@ public record GroupMemberItem(
     string? AvatarKey,
     GroupRole Role,
     bool CanChat,
-    DateTimeOffset JoinedAt);
+    DateTimeOffset JoinedAt,
+    int TodaySeconds);
 
 public record CreateInviteRequest(int? ExpiresInHours, int? MaxUses);
 
 public record InviteResponse(string Code, DateTimeOffset? ExpiresAt, int? MaxUses, int UseCount);
 
 public record GroupMessageItem(Guid Id, Guid GroupId, Guid UserId, string DisplayName, string Body, DateTimeOffset SentAt);
+
+public record UpdateGroupRequest(
+    string Name,
+    string? Description,
+    string? Announcement,
+    bool ChatEnabled,
+    int? MinDailySeconds);
+
+public record ChatPermissionRequest(bool CanChat);
+
+public record RemoveMemberRequest(string? Reason);

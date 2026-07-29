@@ -21,8 +21,25 @@
             </Border>
             <SelectableTextBlock Text="{Binding InviteText}"
                                  IsVisible="{Binding InviteText, Converter={x:Static ObjectConverters.IsNotNull}}" />
+            <TextBlock Text="{Binding MinimumText}" Opacity="0.7"
+                       IsVisible="{Binding MinimumText, Converter={x:Static ObjectConverters.IsNotNull}}" />
             <TextBlock Text="{Binding Error}" Foreground="IndianRed"
                        IsVisible="{Binding Error, Converter={x:Static ObjectConverters.IsNotNull}}" />
+            <Expander Header="Owner settings" IsVisible="{Binding IsOwner}" HorizontalAlignment="Stretch">
+                <StackPanel Spacing="8">
+                    <TextBox PlaceholderText="Name" Text="{Binding EditName}" />
+                    <TextBox PlaceholderText="Description" Text="{Binding EditDescription}" />
+                    <TextBox PlaceholderText="Pinned announcement" Text="{Binding EditAnnouncement}"
+                             AcceptsReturn="True" TextWrapping="Wrap" Height="60" />
+                    <StackPanel Orientation="Horizontal" Spacing="16">
+                        <CheckBox Content="Chat on" IsChecked="{Binding EditChatEnabled}" />
+                        <TextBlock Text="Daily minimum (min, empty for none)" VerticalAlignment="Center" />
+                        <NumericUpDown Value="{Binding EditMinDailyMinutes}" Minimum="0" Maximum="1440"
+                                       Increment="15" FormatString="0" Width="130" />
+                    </StackPanel>
+                    <Button Content="Save settings" Command="{Binding SaveSettingsCommand}" />
+                </StackPanel>
+            </Expander>
         </StackPanel>
 
         <TextBlock DockPanel.Dock="Top" Text="{Binding StudyingText}" Opacity="0.6" Margin="0,0,0,8" />
@@ -34,6 +51,19 @@
                     <DataTemplate x:DataType="vm:MemberRowViewModel">
                         <Border Margin="0,3" Padding="12,8" CornerRadius="6" Background="#14FFFFFF">
                             <DockPanel>
+                                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" Spacing="4"
+                                            Margin="8,0,0,0" VerticalAlignment="Center"
+                                            IsVisible="{Binding $parent[UserControl].((vm:GroupPageViewModel)DataContext).IsOwner}">
+                                    <Button Content="{Binding MuteText}" FontSize="11" IsVisible="{Binding !IsOwner}"
+                                            Command="{Binding $parent[UserControl].((vm:GroupPageViewModel)DataContext).ToggleMuteCommand}"
+                                            CommandParameter="{Binding}" />
+                                    <Button Content="Kick" FontSize="11" IsVisible="{Binding !IsOwner}"
+                                            Command="{Binding $parent[UserControl].((vm:GroupPageViewModel)DataContext).KickCommand}"
+                                            CommandParameter="{Binding}" />
+                                    <Button Content="Ban" FontSize="11" IsVisible="{Binding !IsOwner}"
+                                            Command="{Binding $parent[UserControl].((vm:GroupPageViewModel)DataContext).BanCommand}"
+                                            CommandParameter="{Binding}" />
+                                </StackPanel>
                                 <TextBlock DockPanel.Dock="Right" Text="{Binding ElapsedText}" FontSize="18"
                                            FontWeight="Light" VerticalAlignment="Center" />
                                 <Ellipse Width="10" Height="10" Margin="0,0,12,0" VerticalAlignment="Center"
@@ -45,7 +75,9 @@
                                         <TextBlock Text="owner" Opacity="0.5" FontSize="11" VerticalAlignment="Center"
                                                    IsVisible="{Binding IsOwner}" />
                                     </StackPanel>
-                                    <TextBlock Text="{Binding SubjectName}" Opacity="0.6" FontSize="12" />
+                                    <TextBlock Opacity="0.6" FontSize="12">
+                                        <Run Text="{Binding SubjectName}" /><Run Text=" · " /><Run Text="{Binding TodayText}" />
+                                    </TextBlock>
                                 </StackPanel>
                             </DockPanel>
                         </Border>

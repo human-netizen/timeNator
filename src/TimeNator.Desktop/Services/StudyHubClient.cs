@@ -11,6 +11,8 @@ public interface IStudyHubClient
     event Action<Guid, Guid>? MemberStopped;
     event Action<List<LeaderboardEntry>>? LeaderboardUpdated;
     event Action<Guid, GroupMessageItem>? MessageReceived;
+    event Action<Guid>? GroupUpdated;
+    event Action<Guid, Guid>? MemberRemoved;
 
     Task ConnectAsync();
     Task DisconnectAsync();
@@ -23,6 +25,7 @@ public interface IStudyHubClient
 
     /// <summary>Throws <see cref="HubException"/> with a readable reason when the server refuses.</summary>
     Task SendMessageAsync(Guid groupId, string body);
+    Task LeaveGroupChannelAsync(Guid groupId);
 }
 
 /// <summary>
@@ -50,6 +53,8 @@ public class StudyHubClient : IStudyHubClient
         _connection.On<Guid, Guid>("MemberStopped", (g, u) => MemberStopped?.Invoke(g, u));
         _connection.On<List<LeaderboardEntry>>("LeaderboardUpdated", e => LeaderboardUpdated?.Invoke(e));
         _connection.On<Guid, GroupMessageItem>("MessageReceived", (g, m) => MessageReceived?.Invoke(g, m));
+        _connection.On<Guid>("GroupUpdated", g => GroupUpdated?.Invoke(g));
+        _connection.On<Guid, Guid>("MemberRemoved", (g, u) => MemberRemoved?.Invoke(g, u));
         _connection.Reconnected += async _ =>
         {
             if (_studying is { } s)
@@ -63,6 +68,8 @@ public class StudyHubClient : IStudyHubClient
     public event Action<Guid, Guid>? MemberStopped;
     public event Action<List<LeaderboardEntry>>? LeaderboardUpdated;
     public event Action<Guid, GroupMessageItem>? MessageReceived;
+    public event Action<Guid>? GroupUpdated;
+    public event Action<Guid, Guid>? MemberRemoved;
 
     public async Task ConnectAsync()
     {
@@ -117,6 +124,8 @@ public class StudyHubClient : IStudyHubClient
         _connection.State == HubConnectionState.Connected
             ? _connection.InvokeAsync("SendMessage", groupId, body)
             : throw new HubException("Not connected to the server.");
+
+    public Task LeaveGroupChannelAsync(Guid groupId) => SendAsync("LeaveGroupChannel", groupId);
 
     private async Task SendAsync(string method, params object?[] args)
     {

@@ -78,6 +78,9 @@ public class StudyHub(GroupService groups, SubjectService subjects, PresenceServ
         await Clients.Group(GroupName(groupId)).MessageReceived(groupId, sent.Value!);
     }
 
+    /// <summary>Called by a client that was removed, so its connection stops hearing the group.</summary>
+    public Task LeaveGroupChannel(Guid groupId) => Groups.RemoveFromGroupAsync(Context.ConnectionId, GroupName(groupId));
+
     public Task SubscribeLeaderboard() => Groups.AddToGroupAsync(Context.ConnectionId, LeaderboardGroup);
 
     public Task UnsubscribeLeaderboard() => Groups.RemoveFromGroupAsync(Context.ConnectionId, LeaderboardGroup);

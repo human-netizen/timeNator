@@ -8,11 +8,12 @@ using TimeNator.Shared.Dtos;
 
 namespace TimeNator.Desktop.ViewModels;
 
-/// <summary>One group as seen by one of its members, with live study status.</summary>
+/// <summary>One group as seen by one of its members, with live study status and owner tools.</summary>
 public partial class GroupPageViewModel : ViewModelBase, IDisposable
 {
     private readonly IApiClient _api;
     private readonly IStudyHubClient _hub;
+    private readonly IAuthService _auth;
     private readonly TimeProvider _clock;
     private readonly Action _onRemoved;
     private readonly DispatcherTimer _tick;
@@ -22,6 +23,7 @@ public partial class GroupPageViewModel : ViewModelBase, IDisposable
     {
         _api = api;
         _hub = hub;
+        _auth = auth;
         _clock = clock;
         _onRemoved = onRemoved;
         GroupId = groupId;
@@ -30,6 +32,8 @@ public partial class GroupPageViewModel : ViewModelBase, IDisposable
         _tick.Tick += (_, _) => TickAll();
         _hub.MemberStarted += OnMemberStarted;
         _hub.MemberStopped += OnMemberStopped;
+        _hub.GroupUpdated += OnGroupUpdated;
+        _hub.MemberRemoved += OnMemberRemoved;
     }
 
     public Guid GroupId { get; }
@@ -40,12 +44,19 @@ public partial class GroupPageViewModel : ViewModelBase, IDisposable
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(IsOwner), nameof(Name), nameof(Description), nameof(Announcement),
-        nameof(HasAnnouncement))]
+        nameof(HasAnnouncement), nameof(MinimumText))]
     public partial GroupDetail? Detail { get; private set; }
 
     [ObservableProperty] public partial string? InviteText { get; private set; }
     [ObservableProperty] public partial string? Error { get; private set; }
     [ObservableProperty] public partial string StudyingText { get; private set; } = "";
+
+    // Owner settings, edited in place and saved together.
+    [ObservableProperty] public partial string EditName { get; set; } = "";
+    [ObservableProperty] public partial string EditDescription { get; set; } = "";
+    [ObservableProperty] public partial string EditAnnouncement { get; set; } = "";
+    [ObservableProperty] public partial bool EditChatEnabled { get; set; }
+    [ObservableProperty] public partial decimal? EditMinDailyMinutes { get; set; }
 
     public string Name => Detail?.Name ?? "";
     public string? Description => Detail?.Description;
@@ -53,7 +64,18 @@ public partial class GroupPageViewModel : ViewModelBase, IDisposable
     public bool HasAnnouncement => !string.IsNullOrWhiteSpace(Announcement);
     public bool IsOwner => Detail?.MyRole == GroupRole.Owner;
 
+    public string? MinimumText => Detail?.MinDailySeconds is { } min
+        ? $"Daily minimum: {min / 60} minutes"
+        : null;
+
     public override async Task ActivateAsync()
+    {
+        await LoadAsync();
+        _tick.Start();
+        await Chat.ActivateAsync();
+    }
+
+    private async Task LoadAsync()
     {
         try
         {
@@ -63,11 +85,18 @@ public partial class GroupPageViewModel : ViewModelBase, IDisposable
 
             Members.Clear();
             foreach (var member in members)
-                Members.Add(new MemberRowViewModel(member) { Presence = presence.GetValueOrDefault(member.UserId) });
+                Members.Add(new MemberRowViewModel(member, Detail.MinDailySeconds)
+                {
+                    Presence = presence.GetValueOrDefault(member.UserId)
+                });
             SortMembers();
             TickAll();
-            _tick.Start();
-            await Chat.ActivateAsync();
+
+            EditName = Detail.Name;
+            EditDescription = Detail.Description ?? "";
+            EditAnnouncement = Detail.Announcement ?? "";
+            EditChatEnabled = Detail.ChatEnabled;
+            EditMinDailyMinutes = Detail.MinDailySeconds / 60;
         }
         catch (ApiException ex)
         {
@@ -76,35 +105,41 @@ public partial class GroupPageViewModel : ViewModelBase, IDisposable
     }
 
     [RelayCommand]
-    private async Task CreateInviteAsync()
+    private Task CreateInviteAsync() => RunAsync(async () =>
     {
-        try
-        {
-            var invite = await _api.CreateInviteAsync(GroupId, new CreateInviteRequest(72, null));
-            InviteText = $"Invite code {invite.Code}, valid for 3 days.";
-        }
-        catch (ApiException ex)
-        {
-            Error = ex.Message;
-        }
-    }
+        var invite = await _api.CreateInviteAsync(GroupId, new CreateInviteRequest(72, null));
+        InviteText = $"Invite code {invite.Code}, valid for 3 days.";
+    });
 
     [RelayCommand]
-    private async Task LeaveAsync()
+    private Task LeaveAsync() => RunAsync(async () =>
     {
-        try
-        {
-            if (IsOwner)
-                await _api.DeleteGroupAsync(GroupId);
-            else
-                await _api.LeaveGroupAsync(GroupId);
-            _onRemoved();
-        }
-        catch (ApiException ex)
-        {
-            Error = ex.Message;
-        }
-    }
+        if (IsOwner)
+            await _api.DeleteGroupAsync(GroupId);
+        else
+            await _api.LeaveGroupAsync(GroupId);
+        await _hub.LeaveGroupChannelAsync(GroupId);
+        _onRemoved();
+    });
+
+    [RelayCommand]
+    private Task SaveSettingsAsync() => RunAsync(async () =>
+    {
+        var minutes = EditMinDailyMinutes is > 0 ? (int?)EditMinDailyMinutes.Value : null;
+        await _api.UpdateGroupAsync(GroupId, new UpdateGroupRequest(EditName.Trim(), EditDescription,
+            EditAnnouncement, EditChatEnabled, minutes * 60));
+        // The GroupUpdated broadcast reloads the page for everyone, including us.
+    });
+
+    [RelayCommand]
+    private Task ToggleMuteAsync(MemberRowViewModel row) =>
+        RunAsync(() => _api.SetChatPermissionAsync(GroupId, row.UserId, row.IsMuted));
+
+    [RelayCommand]
+    private Task KickAsync(MemberRowViewModel row) => RunAsync(() => _api.KickAsync(GroupId, row.UserId));
+
+    [RelayCommand]
+    private Task BanAsync(MemberRowViewModel row) => RunAsync(() => _api.BlacklistAsync(GroupId, row.UserId));
 
     private void OnMemberStarted(Guid groupId, MemberPresence presence)
     {
@@ -128,6 +163,31 @@ public partial class GroupPageViewModel : ViewModelBase, IDisposable
             if (Members.FirstOrDefault(m => m.UserId == userId) is { } row)
                 row.Presence = null;
             SortMembers();
+            TickAll();
+        });
+    }
+
+    private void OnGroupUpdated(Guid groupId)
+    {
+        if (groupId == GroupId)
+            Dispatcher.UIThread.Post(() => _ = LoadAsync());
+    }
+
+    private void OnMemberRemoved(Guid groupId, Guid userId)
+    {
+        if (groupId != GroupId)
+            return;
+        Dispatcher.UIThread.Post(() =>
+        {
+            if (userId == _auth.UserId)
+            {
+                // We were removed: stop hearing this group and leave the page.
+                _ = _hub.LeaveGroupChannelAsync(GroupId);
+                _onRemoved();
+                return;
+            }
+            if (Members.FirstOrDefault(m => m.UserId == userId) is { } row)
+                Members.Remove(row);
             TickAll();
         });
     }
@@ -157,11 +217,26 @@ public partial class GroupPageViewModel : ViewModelBase, IDisposable
         StudyingText = $"{studying} of {Members.Count} studying now";
     }
 
+    private async Task RunAsync(Func<Task> action)
+    {
+        try
+        {
+            Error = null;
+            await action();
+        }
+        catch (ApiException ex)
+        {
+            Error = ex.Message;
+        }
+    }
+
     public void Dispose()
     {
         _tick.Stop();
         _hub.MemberStarted -= OnMemberStarted;
         _hub.MemberStopped -= OnMemberStopped;
+        _hub.GroupUpdated -= OnGroupUpdated;
+        _hub.MemberRemoved -= OnMemberRemoved;
         Chat.Dispose();
     }
 }

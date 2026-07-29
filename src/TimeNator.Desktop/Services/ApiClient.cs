@@ -78,6 +78,22 @@ public class ApiClient(HttpClient http) : IApiClient
             before is { } cursor ? $"api/groups/{groupId}/messages?before={cursor}" : $"api/groups/{groupId}/messages",
             cancellationToken);
 
+    public Task<GroupDetail> UpdateGroupAsync(Guid id, UpdateGroupRequest request,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<GroupDetail>(HttpMethod.Put, $"api/groups/{id}", request, cancellationToken);
+
+    public Task SetChatPermissionAsync(Guid groupId, Guid userId, bool canChat,
+        CancellationToken cancellationToken = default) =>
+        SendAsync(HttpMethod.Put, $"api/groups/{groupId}/members/{userId}/chat-permission",
+            new ChatPermissionRequest(canChat), cancellationToken);
+
+    public Task KickAsync(Guid groupId, Guid userId, CancellationToken cancellationToken = default) =>
+        SendAsync(HttpMethod.Post, $"api/groups/{groupId}/members/{userId}/kick", null, cancellationToken);
+
+    public Task BlacklistAsync(Guid groupId, Guid userId, CancellationToken cancellationToken = default) =>
+        SendAsync(HttpMethod.Post, $"api/groups/{groupId}/members/{userId}/blacklist", new RemoveMemberRequest(null),
+            cancellationToken);
+
     public Task<List<LeaderboardEntry>> GetLeaderboardAsync(CancellationToken cancellationToken = default) =>
         GetAsync<List<LeaderboardEntry>>("api/leaderboard", cancellationToken);
 

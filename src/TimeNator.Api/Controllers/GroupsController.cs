@@ -14,7 +14,8 @@ public class GroupsController(
     GroupService groups,
     InviteService invites,
     PresenceService presence,
-    ChatService chat) : ControllerBase
+    ChatService chat,
+    ModerationService moderation) : ControllerBase
 {
     /// <summary>Who in the group is studying right now, for the first paint of the live view.</summary>
     [HttpGet("{id:guid}/presence")]
@@ -82,6 +83,34 @@ public class GroupsController(
     public async Task<ActionResult<List<GroupMessageItem>>> Messages(Guid id, [FromQuery] Guid? before,
         CancellationToken cancellationToken) =>
         this.ToActionResult(await chat.HistoryAsync(User.GetUserId(), id, before, cancellationToken));
+
+    [HttpPut("{id:guid}")]
+    public async Task<ActionResult<GroupDetail>> Update(Guid id, UpdateGroupRequest request,
+        IValidator<UpdateGroupRequest> validator, CancellationToken cancellationToken)
+    {
+        var validation = await validator.ValidateAsync(request, cancellationToken);
+        if (!validation.IsValid)
+            return ValidationProblem(validation.ToModelState());
+
+        return this.ToActionResult(await moderation.UpdateAsync(User.GetUserId(), id, request, cancellationToken));
+    }
+
+    [HttpPut("{id:guid}/members/{userId:guid}/chat-permission")]
+    public async Task<IActionResult> SetChatPermission(Guid id, Guid userId, ChatPermissionRequest request,
+        CancellationToken cancellationToken) =>
+        this.ToNoContent(await moderation.SetChatPermissionAsync(User.GetUserId(), id, userId, request.CanChat,
+            cancellationToken));
+
+    [HttpPost("{id:guid}/members/{userId:guid}/kick")]
+    public async Task<IActionResult> Kick(Guid id, Guid userId, CancellationToken cancellationToken) =>
+        this.ToNoContent(await moderation.RemoveAsync(User.GetUserId(), id, userId, blacklist: false, null,
+            cancellationToken));
+
+    [HttpPost("{id:guid}/members/{userId:guid}/blacklist")]
+    public async Task<IActionResult> Blacklist(Guid id, Guid userId, RemoveMemberRequest request,
+        CancellationToken cancellationToken) =>
+        this.ToNoContent(await moderation.RemoveAsync(User.GetUserId(), id, userId, blacklist: true, request.Reason,
+            cancellationToken));
 
     [HttpGet("{id:guid}/members")]
     public async Task<ActionResult<List<GroupMemberItem>>> Members(Guid id, CancellationToken cancellationToken) =>

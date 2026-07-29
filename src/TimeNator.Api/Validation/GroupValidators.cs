@@ -15,3 +15,14 @@ public class CreateGroupRequestValidator : AbstractValidator<CreateGroupRequest>
             .WithMessage("A private group needs a password of 4 to 64 characters.");
     }
 }
+
+public class UpdateGroupRequestValidator : AbstractValidator<UpdateGroupRequest>
+{
+    public UpdateGroupRequestValidator()
+    {
+        RuleFor(r => r.Name).NotEmpty().MaximumLength(60);
+        RuleFor(r => r.Description).MaximumLength(500);
+        RuleFor(r => r.Announcement).MaximumLength(500);
+        RuleFor(r => r.MinDailySeconds).InclusiveBetween(60, 24 * 60 * 60).When(r => r.MinDailySeconds is not null);
+    }
+}

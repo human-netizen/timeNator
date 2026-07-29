@@ -9,4 +9,9 @@ public interface IStudyClient
     Task MemberStopped(Guid groupId, Guid userId);
     Task LeaderboardUpdated(List<LeaderboardEntry> entries);
     Task MessageReceived(Guid groupId, GroupMessageItem message);
+
+    /// <summary>Group settings or member permissions changed; clients refetch what they show.</summary>
+    Task GroupUpdated(Guid groupId);
+
+    Task MemberRemoved(Guid groupId, Guid userId);
 }
