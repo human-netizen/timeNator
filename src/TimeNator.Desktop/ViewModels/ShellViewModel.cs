@@ -14,6 +14,7 @@ public partial class ShellViewModel(
     HistoryViewModel history,
     GroupsViewModel groups,
     LeaderboardViewModel leaderboard,
+    FocusViewModel focus,
     SettingsViewModel settings) : ViewModelBase
 {
     public string DisplayName => auth.DisplayName ?? "";
@@ -24,6 +25,7 @@ public partial class ShellViewModel(
     public HistoryViewModel History { get; } = history;
     public GroupsViewModel Groups { get; } = groups;
     public LeaderboardViewModel Leaderboard { get; } = leaderboard;
+    public FocusViewModel Focus { get; } = focus;
     public SettingsViewModel Settings { get; } = settings;
 
     private const int LeaderboardTab = 3;
@@ -40,6 +42,7 @@ public partial class ShellViewModel(
         await Subjects.LoadCommand.ExecuteAsync(null);
         await History.LoadCommand.ExecuteAsync(null);
         await Groups.ActivateAsync();
+        await Focus.ActivateAsync();
     }
 
     [RelayCommand]

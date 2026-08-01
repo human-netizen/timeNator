@@ -17,6 +17,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
     public DbSet<GroupInvite> GroupInvites => Set<GroupInvite>();
     public DbSet<GroupMessage> GroupMessages => Set<GroupMessage>();
     public DbSet<GroupBlacklistEntry> GroupBlacklist => Set<GroupBlacklistEntry>();
+    public DbSet<AllowedApp> AllowedApps => Set<AllowedApp>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {

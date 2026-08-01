@@ -43,5 +43,9 @@ public interface IApiClient
     Task KickAsync(Guid groupId, Guid userId, CancellationToken cancellationToken = default);
     Task BlacklistAsync(Guid groupId, Guid userId, CancellationToken cancellationToken = default);
 
+    Task<List<AllowedAppResponse>> GetAllowedAppsAsync(CancellationToken cancellationToken = default);
+    Task<AllowedAppResponse> AddAllowedAppAsync(AllowedAppRequest request, CancellationToken cancellationToken = default);
+    Task RemoveAllowedAppAsync(Guid id, CancellationToken cancellationToken = default);
+
     Task<List<LeaderboardEntry>> GetLeaderboardAsync(CancellationToken cancellationToken = default);
 }

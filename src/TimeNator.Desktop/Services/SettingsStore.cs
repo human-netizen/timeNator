@@ -2,11 +2,21 @@ using System.Text.Json;
 
 namespace TimeNator.Desktop.Services;
 
+/// <summary>What happens when a non-allowed app takes focus during a session.</summary>
+public enum FocusStrictness
+{
+    Off,
+    LogOnly,
+    Warn,
+    ForceFocus
+}
+
 public record AppSettings
 {
     public int IdleThresholdMinutes { get; init; } = 5;
     public int PomodoroFocusMinutes { get; init; } = 25;
     public int PomodoroBreakMinutes { get; init; } = 5;
+    public FocusStrictness FocusStrictness { get; init; } = FocusStrictness.Warn;
 }
 
 /// <summary>Per-machine preferences, kept as JSON next to the other local files.</summary>

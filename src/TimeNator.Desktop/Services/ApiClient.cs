@@ -94,6 +94,16 @@ public class ApiClient(HttpClient http) : IApiClient
         SendAsync(HttpMethod.Post, $"api/groups/{groupId}/members/{userId}/blacklist", new RemoveMemberRequest(null),
             cancellationToken);
 
+    public Task<List<AllowedAppResponse>> GetAllowedAppsAsync(CancellationToken cancellationToken = default) =>
+        GetAsync<List<AllowedAppResponse>>("api/allowed-apps", cancellationToken);
+
+    public Task<AllowedAppResponse> AddAllowedAppAsync(AllowedAppRequest request,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<AllowedAppResponse>(HttpMethod.Post, "api/allowed-apps", request, cancellationToken);
+
+    public Task RemoveAllowedAppAsync(Guid id, CancellationToken cancellationToken = default) =>
+        SendAsync(HttpMethod.Delete, $"api/allowed-apps/{id}", null, cancellationToken);
+
     public Task<List<LeaderboardEntry>> GetLeaderboardAsync(CancellationToken cancellationToken = default) =>
         GetAsync<List<LeaderboardEntry>>("api/leaderboard", cancellationToken);
 

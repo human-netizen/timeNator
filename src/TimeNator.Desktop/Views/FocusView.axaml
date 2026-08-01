@@ -1,0 +1,69 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:TimeNator.Desktop.ViewModels"
+             xmlns:dto="using:TimeNator.Shared.Dtos"
+             x:Class="TimeNator.Desktop.Views.FocusView"
+             x:DataType="vm:FocusViewModel">
+
+    <Grid ColumnDefinitions="*,24,*" RowDefinitions="Auto,*" Margin="24">
+        <StackPanel Grid.ColumnSpan="3" Spacing="8" Margin="0,0,0,16">
+            <DockPanel>
+                <Button DockPanel.Dock="Right" Content="Refresh" Command="{Binding RefreshCommand}" />
+                <TextBlock Text="Focus" FontSize="22" FontWeight="SemiBold" />
+            </DockPanel>
+            <StackPanel Orientation="Horizontal" Spacing="10">
+                <TextBlock Text="During a session:" VerticalAlignment="Center" />
+                <ComboBox ItemsSource="{x:Static vm:FocusViewModel.Levels}" SelectedItem="{Binding Strictness}"
+                          Width="160" />
+                <TextBlock Text="{Binding StrictnessHelp}" VerticalAlignment="Center" Opacity="0.7" />
+            </StackPanel>
+            <TextBlock Text="{Binding Error}" Foreground="IndianRed"
+                       IsVisible="{Binding Error, Converter={x:Static ObjectConverters.IsNotNull}}" />
+        </StackPanel>
+
+        <DockPanel Grid.Row="1" Grid.Column="0">
+            <TextBlock DockPanel.Dock="Top" Text="Allowed apps" FontWeight="SemiBold" Margin="0,0,0,8" />
+            <ScrollViewer>
+                <ItemsControl ItemsSource="{Binding AllowedApps}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate x:DataType="dto:AllowedAppResponse">
+                            <DockPanel Margin="0,3">
+                                <Button DockPanel.Dock="Right" Content="Remove"
+                                        Command="{Binding $parent[UserControl].((vm:FocusViewModel)DataContext).RemoveCommand}"
+                                        CommandParameter="{Binding}" />
+                                <StackPanel>
+                                    <TextBlock Text="{Binding ProcessName}" FontWeight="SemiBold" />
+                                    <TextBlock Text="{Binding DisplayName}" Opacity="0.6" FontSize="12"
+                                               TextTrimming="CharacterEllipsis" />
+                                </StackPanel>
+                            </DockPanel>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </ScrollViewer>
+        </DockPanel>
+
+        <DockPanel Grid.Row="1" Grid.Column="2">
+            <TextBlock DockPanel.Dock="Top" Text="Running now" FontWeight="SemiBold" Margin="0,0,0,8" />
+            <ScrollViewer>
+                <ItemsControl ItemsSource="{Binding RunningApps}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate x:DataType="vm:RunningApp">
+                            <DockPanel Margin="0,3">
+                                <Button DockPanel.Dock="Right" Content="Allow"
+                                        Command="{Binding $parent[UserControl].((vm:FocusViewModel)DataContext).AllowCommand}"
+                                        CommandParameter="{Binding}" />
+                                <StackPanel>
+                                    <TextBlock Text="{Binding ProcessName}" FontWeight="SemiBold" />
+                                    <TextBlock Text="{Binding Title}" Opacity="0.6" FontSize="12"
+                                               TextTrimming="CharacterEllipsis" />
+                                </StackPanel>
+                            </DockPanel>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </ScrollViewer>
+        </DockPanel>
+    </Grid>
+
+</UserControl>

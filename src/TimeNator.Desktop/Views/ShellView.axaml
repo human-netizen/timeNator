@@ -25,6 +25,7 @@
             <TabItem Header="History" Content="{Binding History}" />
             <TabItem Header="Groups" Content="{Binding Groups}" />
             <TabItem Header="Leaderboard" Content="{Binding Leaderboard}" />
+            <TabItem Header="Focus" Content="{Binding Focus}" />
             <TabItem Header="Subjects" Content="{Binding Subjects}" />
             <TabItem Header="Settings" Content="{Binding Settings}" />
         </TabControl>
