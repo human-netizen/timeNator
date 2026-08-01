@@ -21,6 +21,7 @@ public partial class TimerViewModel : ViewModelBase
     private readonly SettingsStore _settings;
     private readonly IWindowService _windows;
     private readonly IStudyHubClient _hub;
+    private readonly FocusGuard _focus;
     private readonly TimeProvider _clock;
     private readonly StudyTimer _timer;
     private readonly DispatcherTimer _tick;
@@ -32,7 +33,7 @@ public partial class TimerViewModel : ViewModelBase
 
     public TimerViewModel(SubjectCatalog catalog, SessionJournal journal, SessionUploader uploader,
         IIdleDetector idle, SettingsStore settings, IWindowService windows, IStudyHubClient hub,
-        TimeProvider clock)
+        FocusGuard focus, TimeProvider clock)
     {
         _journal = journal;
         _uploader = uploader;
@@ -41,6 +42,8 @@ public partial class TimerViewModel : ViewModelBase
         _settings = settings;
         _windows = windows;
         _hub = hub;
+        _focus = focus;
+        _focus.Warning += app => Message = $"{app} is not on your allowed list. Back to work.";
         _timer = new StudyTimer(clock);
         Subjects = catalog.Subjects;
         _tick = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(250) };
@@ -140,6 +143,7 @@ public partial class TimerViewModel : ViewModelBase
                 TimeSpan.FromMinutes(settings.PomodoroBreakMinutes))
             : null;
         _timer.Start();
+        _ = _focus.StartAsync();
         _tick.Start();
         Message = null;
         Journal();
@@ -187,6 +191,7 @@ public partial class TimerViewModel : ViewModelBase
         if (timing.DurationSeconds < 1)
         {
             _journal.SetActive(null);
+            await _focus.StopAsync(null);
             Message = "Session too short to save.";
             return;
         }
@@ -198,7 +203,8 @@ public partial class TimerViewModel : ViewModelBase
         // the active entry afterwards never leaves a window where the session is on disk nowhere.
         var submit = _uploader.SubmitAsync(request);
         _journal.SetActive(null);
-        var (outcome, error) = await submit;
+        var (outcome, error, sessionId) = await submit;
+        await _focus.StopAsync(sessionId);
 
         var length = Format(TimeSpan.FromSeconds(timing.DurationSeconds));
         Message = outcome switch
@@ -316,6 +322,7 @@ public partial class TimerViewModel : ViewModelBase
         if (studying == _announcedStudying)
             return;
         _announcedStudying = studying;
+        _focus.SetPaused(!studying);
         _lastPresencePing = _clock.GetUtcNow();
         _ = studying ? _hub.StartedStudyingAsync(SelectedSubject!.Id, _runningMode) : _hub.StoppedStudyingAsync();
     }

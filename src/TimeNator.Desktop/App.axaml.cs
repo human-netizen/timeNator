@@ -55,6 +55,8 @@ public partial class App : Application
         services.AddTransient<SettingsViewModel>();
         services.AddSingleton<SettingsStore>();
         services.AddSingleton<IWindowService, WindowService>();
+        services.AddSingleton<IForegroundWatcher, ForegroundWatcher>();
+        services.AddSingleton<FocusGuard>();
         services.AddSingleton<IIdleDetector, IdleDetector>();
         services.AddSingleton<SubjectCatalog>();
         services.AddSingleton<SessionJournal>();

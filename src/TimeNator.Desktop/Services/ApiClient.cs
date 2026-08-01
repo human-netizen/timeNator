@@ -104,6 +104,16 @@ public class ApiClient(HttpClient http) : IApiClient
     public Task RemoveAllowedAppAsync(Guid id, CancellationToken cancellationToken = default) =>
         SendAsync(HttpMethod.Delete, $"api/allowed-apps/{id}", null, cancellationToken);
 
+    public Task AddDistractionEventsAsync(List<DistractionEventRequest> events,
+        CancellationToken cancellationToken = default) =>
+        SendAsync(HttpMethod.Post, "api/distraction-events", events, cancellationToken);
+
+    public Task<List<DistractionEventResponse>> GetDistractionEventsAsync(DateTimeOffset from, DateTimeOffset to,
+        CancellationToken cancellationToken = default) =>
+        GetAsync<List<DistractionEventResponse>>(
+            $"api/distraction-events?from={Uri.EscapeDataString(from.ToString("O"))}&to={Uri.EscapeDataString(to.ToString("O"))}",
+            cancellationToken);
+
     public Task<List<LeaderboardEntry>> GetLeaderboardAsync(CancellationToken cancellationToken = default) =>
         GetAsync<List<LeaderboardEntry>>("api/leaderboard", cancellationToken);
 

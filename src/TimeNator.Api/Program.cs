@@ -78,6 +78,7 @@ builder.Services.AddScoped<InviteService>();
 builder.Services.AddScoped<ChatService>();
 builder.Services.AddScoped<ModerationService>();
 builder.Services.AddScoped<AllowedAppService>();
+builder.Services.AddScoped<DistractionService>();
 
 var redisConnection = builder.Configuration.GetConnectionString("Redis")
                       ?? throw new InvalidOperationException("Connection string 'Redis' is not configured.");

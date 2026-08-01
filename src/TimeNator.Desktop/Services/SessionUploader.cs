@@ -24,13 +24,13 @@ public class SessionUploader(IApiClient api, SessionJournal journal)
     /// <summary>Raised on any successful upload; the flag is true when it came from the retry queue.</summary>
     public event Action<CreateSessionRequest, bool>? Uploaded;
 
-    public async Task<(UploadOutcome Outcome, string? Error)> SubmitAsync(CreateSessionRequest request)
+    public async Task<(UploadOutcome Outcome, string? Error, Guid? SessionId)> SubmitAsync(CreateSessionRequest request)
     {
         journal.AddPending(request);
-        var (outcome, error) = await TryUploadAsync(request, fromRetry: false);
+        var (outcome, error, sessionId) = await TryUploadAsync(request, fromRetry: false);
         if (outcome == UploadOutcome.Queued)
             StartRetrying();
-        return (outcome, error);
+        return (outcome, error, sessionId);
     }
 
     /// <summary>Called on launch to push anything left over from a previous run.</summary>
@@ -40,23 +40,23 @@ public class SessionUploader(IApiClient api, SessionJournal journal)
             StartRetrying();
     }
 
-    private async Task<(UploadOutcome, string?)> TryUploadAsync(CreateSessionRequest request, bool fromRetry)
+    private async Task<(UploadOutcome, string?, Guid?)> TryUploadAsync(CreateSessionRequest request, bool fromRetry)
     {
         try
         {
-            await api.CreateSessionAsync(request);
+            var saved = await api.CreateSessionAsync(request);
             journal.RemovePending(request);
             Uploaded?.Invoke(request, fromRetry);
-            return (UploadOutcome.Saved, null);
+            return (UploadOutcome.Saved, null, saved.Id);
         }
         catch (ApiException ex) when (ex.StatusCode is >= 400 and < 500)
         {
             journal.RemovePending(request);
-            return (UploadOutcome.Rejected, ex.Message);
+            return (UploadOutcome.Rejected, ex.Message, null);
         }
         catch (ApiException ex)
         {
-            return (UploadOutcome.Queued, ex.Message);
+            return (UploadOutcome.Queued, ex.Message, null);
         }
     }
 
@@ -78,7 +78,7 @@ public class SessionUploader(IApiClient api, SessionJournal journal)
                 var allSaved = true;
                 foreach (var request in pending)
                 {
-                    var (outcome, _) = await TryUploadAsync(request, fromRetry: true);
+                    var (outcome, _, _) = await TryUploadAsync(request, fromRetry: true);
                     allSaved &= outcome != UploadOutcome.Queued;
                 }
                 delay = allSaved ? FirstDelay : TimeSpan.FromTicks(Math.Min(delay.Ticks * 2, MaxDelay.Ticks));

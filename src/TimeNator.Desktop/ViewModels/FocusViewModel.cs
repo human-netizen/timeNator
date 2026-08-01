@@ -9,16 +9,23 @@ namespace TimeNator.Desktop.ViewModels;
 
 public record RunningApp(string ProcessName, string Title);
 
+public record DistractionLine(string When, string ProcessName, string WindowTitle, string Duration);
+
+public record DistractionTotal(string ProcessName, string Duration, int Count);
+
 /// <summary>Which applications are fine to use during a session, and how strictly the rest are handled.</summary>
 public partial class FocusViewModel : ViewModelBase
 {
     private readonly IApiClient _api;
     private readonly SettingsStore _settings;
 
-    public FocusViewModel(IApiClient api, SettingsStore settings)
+    private readonly TimeProvider _clock;
+
+    public FocusViewModel(IApiClient api, SettingsStore settings, TimeProvider clock)
     {
         _api = api;
         _settings = settings;
+        _clock = clock;
         Strictness = settings.Current.FocusStrictness;
     }
 
@@ -26,6 +33,8 @@ public partial class FocusViewModel : ViewModelBase
 
     public ObservableCollection<AllowedAppResponse> AllowedApps { get; } = [];
     public ObservableCollection<RunningApp> RunningApps { get; } = [];
+    public ObservableCollection<DistractionLine> Distractions { get; } = [];
+    public ObservableCollection<DistractionTotal> DistractionTotals { get; } = [];
 
     [ObservableProperty] public partial FocusStrictness Strictness { get; set; }
     [ObservableProperty] public partial string? Error { get; private set; }
@@ -55,6 +64,7 @@ public partial class FocusViewModel : ViewModelBase
             AllowedApps.Clear();
             foreach (var app in allowed)
                 AllowedApps.Add(app);
+            await LoadDistractionsAsync();
             Error = null;
         }
         catch (ApiException ex)
@@ -125,6 +135,29 @@ public partial class FocusViewModel : ViewModelBase
             // Elevated or exited processes cannot be inspected.
         }
         return process.MainWindowTitle;
+    }
+
+    /// <summary>The last seven days: every event, plus totals per app, worst first.</summary>
+    private async Task LoadDistractionsAsync()
+    {
+        var now = _clock.GetUtcNow();
+        var events = await _api.GetDistractionEventsAsync(now.AddDays(-7), now.AddMinutes(1));
+
+        Distractions.Clear();
+        foreach (var e in events.Take(100))
+            Distractions.Add(new DistractionLine(
+                TimeZoneInfo.ConvertTime(e.OccurredAt, _clock.LocalTimeZone).ToString("ddd HH:mm"),
+                e.ProcessName, Shorten(e.WindowTitle), FormatSeconds(e.DurationSeconds)));
+
+        DistractionTotals.Clear();
+        foreach (var g in events.GroupBy(e => e.ProcessName).OrderByDescending(g => g.Sum(e => e.DurationSeconds)))
+            DistractionTotals.Add(new DistractionTotal(g.Key, FormatSeconds(g.Sum(e => e.DurationSeconds)), g.Count()));
+    }
+
+    private static string FormatSeconds(int seconds)
+    {
+        var span = TimeSpan.FromSeconds(seconds);
+        return span.TotalMinutes >= 1 ? $"{(int)span.TotalMinutes}m {span.Seconds:00}s" : $"{span.Seconds}s";
     }
 
     private static string Shorten(string title) => title.Length > 60 ? title[..57] + "..." : title;

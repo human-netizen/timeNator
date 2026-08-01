@@ -47,5 +47,9 @@ public interface IApiClient
     Task<AllowedAppResponse> AddAllowedAppAsync(AllowedAppRequest request, CancellationToken cancellationToken = default);
     Task RemoveAllowedAppAsync(Guid id, CancellationToken cancellationToken = default);
 
+    Task AddDistractionEventsAsync(List<DistractionEventRequest> events, CancellationToken cancellationToken = default);
+    Task<List<DistractionEventResponse>> GetDistractionEventsAsync(DateTimeOffset from, DateTimeOffset to,
+        CancellationToken cancellationToken = default);
+
     Task<List<LeaderboardEntry>> GetLeaderboardAsync(CancellationToken cancellationToken = default);
 }

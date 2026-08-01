@@ -5,7 +5,7 @@
              x:Class="TimeNator.Desktop.Views.FocusView"
              x:DataType="vm:FocusViewModel">
 
-    <Grid ColumnDefinitions="*,24,*" RowDefinitions="Auto,*" Margin="24">
+    <Grid ColumnDefinitions="*,24,*" RowDefinitions="Auto,*,16,*" Margin="24">
         <StackPanel Grid.ColumnSpan="3" Spacing="8" Margin="0,0,0,16">
             <DockPanel>
                 <Button DockPanel.Dock="Right" Content="Refresh" Command="{Binding RefreshCommand}" />
@@ -58,6 +58,44 @@
                                     <TextBlock Text="{Binding Title}" Opacity="0.6" FontSize="12"
                                                TextTrimming="CharacterEllipsis" />
                                 </StackPanel>
+                            </DockPanel>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </ScrollViewer>
+        </DockPanel>
+        <DockPanel Grid.Row="3" Grid.Column="0">
+            <TextBlock DockPanel.Dock="Top" Text="Distractions, last 7 days" FontWeight="SemiBold" Margin="0,0,0,8" />
+            <ScrollViewer>
+                <ItemsControl ItemsSource="{Binding Distractions}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate x:DataType="vm:DistractionLine">
+                            <DockPanel Margin="0,2">
+                                <TextBlock DockPanel.Dock="Left" Text="{Binding When}" Width="90" Opacity="0.6" />
+                                <TextBlock DockPanel.Dock="Right" Text="{Binding Duration}" />
+                                <TextBlock TextTrimming="CharacterEllipsis">
+                                    <Run Text="{Binding ProcessName}" FontWeight="SemiBold" /><Run Text="  " /><Run
+                                        Text="{Binding WindowTitle}" Foreground="Gray" />
+                                </TextBlock>
+                            </DockPanel>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </ScrollViewer>
+        </DockPanel>
+
+        <DockPanel Grid.Row="3" Grid.Column="2">
+            <TextBlock DockPanel.Dock="Top" Text="Worst offenders" FontWeight="SemiBold" Margin="0,0,0,8" />
+            <ScrollViewer>
+                <ItemsControl ItemsSource="{Binding DistractionTotals}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate x:DataType="vm:DistractionTotal">
+                            <DockPanel Margin="0,2">
+                                <TextBlock DockPanel.Dock="Right" Text="{Binding Duration}" FontWeight="SemiBold" />
+                                <TextBlock>
+                                    <Run Text="{Binding ProcessName}" /><Run Text=" × " Foreground="Gray" /><Run
+                                        Text="{Binding Count}" Foreground="Gray" />
+                                </TextBlock>
                             </DockPanel>
                         </DataTemplate>
                     </ItemsControl.ItemTemplate>
