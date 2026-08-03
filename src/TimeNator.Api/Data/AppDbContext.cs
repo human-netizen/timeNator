@@ -19,6 +19,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
     public DbSet<GroupBlacklistEntry> GroupBlacklist => Set<GroupBlacklistEntry>();
     public DbSet<AllowedApp> AllowedApps => Set<AllowedApp>();
     public DbSet<DistractionEvent> DistractionEvents => Set<DistractionEvent>();
+    public DbSet<TodoItem> TodoItems => Set<TodoItem>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
