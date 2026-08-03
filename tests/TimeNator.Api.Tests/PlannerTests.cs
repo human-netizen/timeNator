@@ -59,6 +59,62 @@ public class PlannerTests(ApiFactory factory)
         Assert.Equal(HttpStatusCode.BadRequest, nonsense.StatusCode);
     }
 
+    [Fact]
+    public async Task Timetable_orders_by_day_and_time_and_rejects_backwards_entries()
+    {
+        var client = await factory.CreateUserClientAsync();
+        await client.PostAsJsonAsync("/api/timetable",
+            new TimetableRequest(DayOfWeek.Tuesday, new TimeOnly(9, 0), new TimeOnly(10, 30), "Lab", null));
+        await client.PostAsJsonAsync("/api/timetable",
+            new TimetableRequest(DayOfWeek.Monday, new TimeOnly(14, 0), new TimeOnly(15, 0), "Lecture", null));
+
+        var backwards = await client.PostAsJsonAsync("/api/timetable",
+            new TimetableRequest(DayOfWeek.Monday, new TimeOnly(11, 0), new TimeOnly(10, 0), "Oops", null));
+        var list = await client.GetFromJsonAsync<List<TimetableResponse>>("/api/timetable");
+
+        Assert.Equal(HttpStatusCode.BadRequest, backwards.StatusCode);
+        Assert.Equal(["Lecture", "Lab"], list!.Select(e => e.Title));
+    }
+
+    [Fact]
+    public async Task Ddays_list_soonest_first()
+    {
+        var client = await factory.CreateUserClientAsync();
+        await client.PostAsJsonAsync("/api/ddays", new DdayRequest("Finals", Monday.AddDays(60)));
+        await client.PostAsJsonAsync("/api/ddays", new DdayRequest("Midterm", Monday.AddDays(20)));
+
+        var list = await client.GetFromJsonAsync<List<DdayResponse>>("/api/ddays");
+
+        Assert.Equal(["Midterm", "Finals"], list!.Select(d => d.Title));
+    }
+
+    [Fact]
+    public async Task Daily_review_pairs_the_local_days_sessions_with_its_todos()
+    {
+        var client = await factory.CreateUserClientAsync();
+        var subject = await (await client.PostAsJsonAsync("/api/subjects",
+            new CreateSubjectRequest("Math", "#FF0000"))).Content.ReadFromJsonAsync<SubjectResponse>();
+        await client.PostAsJsonAsync("/api/todos", new CreateTodoRequest("Chapter 3", subject!.Id, Monday, null));
+
+        // 23:30 on Monday in UTC+6 is 17:30 UTC Monday; 00:30 Tuesday local is 18:30 UTC Monday.
+        var offset = TimeSpan.FromHours(6);
+        foreach (var (local, seconds) in new[] { (new DateTime(2026, 7, 27, 23, 0, 0), 1200),
+                     (new DateTime(2026, 7, 28, 0, 30, 0), 600) })
+        {
+            var start = new DateTimeOffset(local, offset);
+            await client.PostAsJsonAsync("/api/sessions", new CreateSessionRequest(subject.Id, start,
+                start.AddSeconds(seconds), seconds, 0, Shared.SessionMode.Stopwatch, Shared.SessionSource.Timer,
+                seconds));
+        }
+
+        var review = await client.GetFromJsonAsync<DailyReviewResponse>(
+            $"/api/daily-review?date={Monday:yyyy-MM-dd}&offsetMinutes=360");
+
+        Assert.Equal(1200, review!.TotalSeconds);
+        Assert.Equal("Math", Assert.Single(review.Subjects).SubjectName);
+        Assert.Equal("Chapter 3", Assert.Single(review.Todos).Title);
+    }
+
     private static async Task<List<TodoResponse>> Day(HttpClient client, DateOnly date) =>
         (await client.GetFromJsonAsync<List<TodoResponse>>($"/api/todos?date={date:yyyy-MM-dd}"))!;
 }

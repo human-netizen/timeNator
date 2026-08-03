@@ -80,6 +80,9 @@ builder.Services.AddScoped<ModerationService>();
 builder.Services.AddScoped<AllowedAppService>();
 builder.Services.AddScoped<DistractionService>();
 builder.Services.AddScoped<TodoService>();
+builder.Services.AddScoped<DdayService>();
+builder.Services.AddScoped<TimetableService>();
+builder.Services.AddScoped<DailyReviewService>();
 
 var redisConnection = builder.Configuration.GetConnectionString("Redis")
                       ?? throw new InvalidOperationException("Connection string 'Redis' is not configured.");

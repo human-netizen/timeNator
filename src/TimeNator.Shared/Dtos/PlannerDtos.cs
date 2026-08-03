@@ -18,3 +18,27 @@ public record TodoResponse(
     DateTimeOffset? CompletedAt,
     string? RepeatRule,
     Guid? RepeatParentId);
+
+public record SubjectTotal(Guid SubjectId, string SubjectName, string ColorHex, int Seconds);
+
+public record DailyReviewResponse(
+    DateOnly Date,
+    int TotalSeconds,
+    int SessionCount,
+    List<SubjectTotal> Subjects,
+    List<TodoResponse> Todos);
+
+public record DdayRequest(string Title, DateOnly TargetDate);
+
+public record DdayResponse(Guid Id, string Title, DateOnly TargetDate);
+
+public record TimetableRequest(DayOfWeek DayOfWeek, TimeOnly StartTime, TimeOnly EndTime, string Title, Guid? SubjectId);
+
+public record TimetableResponse(
+    Guid Id,
+    DayOfWeek DayOfWeek,
+    TimeOnly StartTime,
+    TimeOnly EndTime,
+    string Title,
+    Guid? SubjectId,
+    string? SubjectColorHex);

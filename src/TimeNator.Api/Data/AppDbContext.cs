@@ -20,6 +20,8 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
     public DbSet<AllowedApp> AllowedApps => Set<AllowedApp>();
     public DbSet<DistractionEvent> DistractionEvents => Set<DistractionEvent>();
     public DbSet<TodoItem> TodoItems => Set<TodoItem>();
+    public DbSet<DdayTarget> DdayTargets => Set<DdayTarget>();
+    public DbSet<TimetableEntry> TimetableEntries => Set<TimetableEntry>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
