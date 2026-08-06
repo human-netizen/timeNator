@@ -68,6 +68,24 @@ public class AuthTests(ApiFactory factory)
     }
 
     [Fact]
+    public async Task Refresh_rotates_and_reusing_an_old_token_revokes_everything()
+    {
+        var client = factory.CreateClient();
+        var registered = await client.PostAsJsonAsync("/api/auth/register",
+            new RegisterRequest($"{Guid.NewGuid():N}@test.dev", "password123", "Ada"));
+        var first = (await registered.Content.ReadFromJsonAsync<AuthResponse>())!;
+
+        var rotated = (await (await client.PostAsJsonAsync("/api/auth/refresh",
+            new RefreshRequest(first.RefreshToken))).Content.ReadFromJsonAsync<AuthResponse>())!;
+        var replay = await client.PostAsJsonAsync("/api/auth/refresh", new RefreshRequest(first.RefreshToken));
+        var afterReplay = await client.PostAsJsonAsync("/api/auth/refresh", new RefreshRequest(rotated.RefreshToken));
+
+        Assert.NotEqual(first.RefreshToken, rotated.RefreshToken);
+        Assert.Equal(HttpStatusCode.Unauthorized, replay.StatusCode);
+        Assert.Equal(HttpStatusCode.Unauthorized, afterReplay.StatusCode);
+    }
+
+    [Fact]
     public async Task Protected_route_requires_a_token()
     {
         var response = await factory.CreateClient().GetAsync("/api/subjects");

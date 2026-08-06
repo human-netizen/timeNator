@@ -38,12 +38,19 @@ public class ApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
         await _redis.DisposeAsync();
     }
 
+    protected virtual int AuthPerMinute => 100000;
+    protected virtual int HubBurst => 100000;
+
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         builder.UseEnvironment("Testing");
         builder.UseSetting("ConnectionStrings:Postgres", _postgres.GetConnectionString());
         builder.UseSetting("ConnectionStrings:Redis", _redis.GetConnectionString());
         builder.UseSetting("Jwt:SigningKey", "test-signing-key-that-is-long-enough-for-hs256");
+        // Every test user comes from the same address and some tests send bursts, so the limits are
+        // lifted here; RateLimitTests runs its own factory with them turned down.
+        builder.UseSetting("RateLimits:AuthPerMinute", AuthPerMinute.ToString());
+        builder.UseSetting("RateLimits:HubBurst", HubBurst.ToString());
     }
 
     public async Task<TestUser> CreateUserAsync(string displayName = "Tester")

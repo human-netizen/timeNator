@@ -2,6 +2,7 @@ using FluentValidation;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using TimeNator.Api.Entities;
 using TimeNator.Api.Services;
 using TimeNator.Api.Validation;
@@ -11,6 +12,7 @@ namespace TimeNator.Api.Controllers;
 
 [ApiController]
 [Route("api/auth")]
+[EnableRateLimiting("auth")]
 public class AuthController(
     UserManager<ApplicationUser> users,
     TokenService tokens,

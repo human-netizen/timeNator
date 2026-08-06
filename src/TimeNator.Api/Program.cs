@@ -1,7 +1,9 @@
 using System.Text;
+using System.Threading.RateLimiting;
 using FluentValidation;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Serilog;
@@ -96,7 +98,22 @@ builder.Services.AddHealthChecks().AddDbContextCheck<AppDbContext>("database");
 builder.Services.AddValidatorsFromAssemblyContaining<Program>();
 builder.Services.AddProblemDetails();
 builder.Services.AddControllers();
-builder.Services.AddSignalR();
+builder.Services.AddSingleton<HubRateLimitFilter>();
+builder.Services.AddSignalR(options => options.AddFilter<HubRateLimitFilter>());
+
+// Login and registration are the targets for password guessing and account spam, so they get
+// a strict per-address window. Everything else is behind authentication already.
+builder.Services.AddRateLimiter(options =>
+{
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+    options.AddPolicy("auth", context => RateLimitPartition.GetFixedWindowLimiter(
+        context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+        _ => new FixedWindowRateLimiterOptions
+        {
+            PermitLimit = builder.Configuration.GetValue("RateLimits:AuthPerMinute", 10),
+            Window = TimeSpan.FromMinutes(1)
+        }));
+});
 
 var app = builder.Build();
 
@@ -106,6 +123,7 @@ app.UseHttpsRedirection();
 
 app.UseAuthentication();
 app.UseAuthorization();
+app.UseRateLimiter();
 
 app.MapHealthChecks("/health", new() { ResponseWriter = HealthResponse.WriteAsync });
 
