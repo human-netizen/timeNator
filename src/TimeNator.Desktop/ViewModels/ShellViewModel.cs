@@ -15,6 +15,8 @@ public partial class ShellViewModel(
     GroupsViewModel groups,
     LeaderboardViewModel leaderboard,
     FocusViewModel focus,
+    PlannerViewModel planner,
+    TimetableViewModel timetable,
     SettingsViewModel settings) : ViewModelBase
 {
     public string DisplayName => auth.DisplayName ?? "";
@@ -26,9 +28,11 @@ public partial class ShellViewModel(
     public GroupsViewModel Groups { get; } = groups;
     public LeaderboardViewModel Leaderboard { get; } = leaderboard;
     public FocusViewModel Focus { get; } = focus;
+    public PlannerViewModel Planner { get; } = planner;
+    public TimetableViewModel Timetable { get; } = timetable;
     public SettingsViewModel Settings { get; } = settings;
 
-    private const int LeaderboardTab = 3;
+    private const int LeaderboardTab = 5;
 
     [ObservableProperty] public partial int SelectedTab { get; set; }
 
@@ -43,6 +47,8 @@ public partial class ShellViewModel(
         await History.LoadCommand.ExecuteAsync(null);
         await Groups.ActivateAsync();
         await Focus.ActivateAsync();
+        await Planner.ActivateAsync();
+        await Timetable.ActivateAsync();
     }
 
     [RelayCommand]

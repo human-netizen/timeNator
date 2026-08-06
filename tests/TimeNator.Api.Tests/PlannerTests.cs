@@ -96,7 +96,8 @@ public class PlannerTests(ApiFactory factory)
             new CreateSubjectRequest("Math", "#FF0000"))).Content.ReadFromJsonAsync<SubjectResponse>();
         await client.PostAsJsonAsync("/api/todos", new CreateTodoRequest("Chapter 3", subject!.Id, Monday, null));
 
-        // 23:30 on Monday in UTC+6 is 17:30 UTC Monday; 00:30 Tuesday local is 18:30 UTC Monday.
+        // In UTC+6, 23:00 Monday is 17:00 UTC and 00:30 Tuesday is 18:30 UTC, both Monday in UTC.
+        // Only the first belongs to the local Monday.
         var offset = TimeSpan.FromHours(6);
         foreach (var (local, seconds) in new[] { (new DateTime(2026, 7, 27, 23, 0, 0), 1200),
                      (new DateTime(2026, 7, 28, 0, 30, 0), 600) })

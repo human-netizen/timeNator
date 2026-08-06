@@ -114,6 +114,40 @@ public class ApiClient(HttpClient http) : IApiClient
             $"api/distraction-events?from={Uri.EscapeDataString(from.ToString("O"))}&to={Uri.EscapeDataString(to.ToString("O"))}",
             cancellationToken);
 
+    public Task<DailyReviewResponse> GetDailyReviewAsync(DateOnly date, TimeSpan utcOffset,
+        CancellationToken cancellationToken = default) =>
+        GetAsync<DailyReviewResponse>(
+            $"api/daily-review?date={date:yyyy-MM-dd}&offsetMinutes={(int)utcOffset.TotalMinutes}", cancellationToken);
+
+    public Task<TodoResponse> CreateTodoAsync(CreateTodoRequest request, CancellationToken cancellationToken = default) =>
+        SendAsync<TodoResponse>(HttpMethod.Post, "api/todos", request, cancellationToken);
+
+    public Task<TodoResponse> UpdateTodoAsync(Guid id, UpdateTodoRequest request,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<TodoResponse>(HttpMethod.Put, $"api/todos/{id}", request, cancellationToken);
+
+    public Task DeleteTodoAsync(Guid id, CancellationToken cancellationToken = default) =>
+        SendAsync(HttpMethod.Delete, $"api/todos/{id}", null, cancellationToken);
+
+    public Task<List<DdayResponse>> GetDdaysAsync(CancellationToken cancellationToken = default) =>
+        GetAsync<List<DdayResponse>>("api/ddays", cancellationToken);
+
+    public Task<DdayResponse> CreateDdayAsync(DdayRequest request, CancellationToken cancellationToken = default) =>
+        SendAsync<DdayResponse>(HttpMethod.Post, "api/ddays", request, cancellationToken);
+
+    public Task DeleteDdayAsync(Guid id, CancellationToken cancellationToken = default) =>
+        SendAsync(HttpMethod.Delete, $"api/ddays/{id}", null, cancellationToken);
+
+    public Task<List<TimetableResponse>> GetTimetableAsync(CancellationToken cancellationToken = default) =>
+        GetAsync<List<TimetableResponse>>("api/timetable", cancellationToken);
+
+    public Task<TimetableResponse> CreateTimetableEntryAsync(TimetableRequest request,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<TimetableResponse>(HttpMethod.Post, "api/timetable", request, cancellationToken);
+
+    public Task DeleteTimetableEntryAsync(Guid id, CancellationToken cancellationToken = default) =>
+        SendAsync(HttpMethod.Delete, $"api/timetable/{id}", null, cancellationToken);
+
     public Task<List<LeaderboardEntry>> GetLeaderboardAsync(CancellationToken cancellationToken = default) =>
         GetAsync<List<LeaderboardEntry>>("api/leaderboard", cancellationToken);
 

@@ -1,0 +1,117 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:TimeNator.Desktop.ViewModels"
+             xmlns:dto="using:TimeNator.Shared.Dtos"
+             xmlns:conv="using:TimeNator.Desktop.Converters"
+             x:Class="TimeNator.Desktop.Views.PlannerView"
+             x:DataType="vm:PlannerViewModel">
+
+    <Grid ColumnDefinitions="*,24,300" Margin="24">
+        <DockPanel Grid.Column="0">
+            <StackPanel DockPanel.Dock="Top" Spacing="10" Margin="0,0,0,12">
+                <DockPanel>
+                    <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" Spacing="6">
+                        <Button Content="‹" Command="{Binding PreviousDayCommand}" />
+                        <Button Content="Today" Command="{Binding TodayCommand}" />
+                        <Button Content="›" Command="{Binding NextDayCommand}" />
+                    </StackPanel>
+                    <TextBlock Text="{Binding DayTitle}" FontSize="22" FontWeight="SemiBold" />
+                </DockPanel>
+                <TextBlock Text="{Binding Error}" Foreground="IndianRed"
+                           IsVisible="{Binding Error, Converter={x:Static ObjectConverters.IsNotNull}}" />
+
+                <TextBlock Text="{Binding StudiedText}" Opacity="0.8" />
+                <ItemsControl ItemsSource="{Binding StudiedSubjects}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate x:DataType="vm:SubjectRow">
+                            <DockPanel Margin="0,2">
+                                <Ellipse Width="10" Height="10" Margin="0,0,8,0"
+                                         Fill="{Binding ColorHex, Converter={x:Static conv:HexToBrushConverter.Instance}}" />
+                                <TextBlock DockPanel.Dock="Right" Text="{Binding Duration}" />
+                                <TextBlock Text="{Binding Name}" />
+                            </DockPanel>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+
+                <DockPanel Margin="0,12,0,0">
+                    <TextBlock DockPanel.Dock="Right" Text="{Binding TodoProgress}" Opacity="0.6" />
+                    <TextBlock Text="To-dos" FontWeight="SemiBold" />
+                </DockPanel>
+                <DockPanel>
+                    <Button DockPanel.Dock="Right" Content="Add" Command="{Binding AddTodoCommand}" Margin="6,0,0,0"
+                            IsDefault="True" />
+                    <ComboBox DockPanel.Dock="Right" Width="120" Margin="6,0,0,0"
+                              ItemsSource="{x:Static vm:PlannerViewModel.RepeatOptions}"
+                              SelectedItem="{Binding NewTodoRepeat}">
+                        <ComboBox.ItemTemplate>
+                            <DataTemplate x:DataType="vm:RepeatOption">
+                                <TextBlock Text="{Binding Name}" />
+                            </DataTemplate>
+                        </ComboBox.ItemTemplate>
+                    </ComboBox>
+                    <ComboBox DockPanel.Dock="Right" Width="140" Margin="6,0,0,0" PlaceholderText="Subject"
+                              ItemsSource="{Binding Subjects}" SelectedItem="{Binding NewTodoSubject}">
+                        <ComboBox.ItemTemplate>
+                            <DataTemplate x:DataType="dto:SubjectResponse">
+                                <TextBlock Text="{Binding Name}" />
+                            </DataTemplate>
+                        </ComboBox.ItemTemplate>
+                    </ComboBox>
+                    <TextBox PlaceholderText="What needs doing?" Text="{Binding NewTodo}" />
+                </DockPanel>
+            </StackPanel>
+
+            <ScrollViewer>
+                <ItemsControl ItemsSource="{Binding Todos}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate x:DataType="vm:TodoRow">
+                            <DockPanel Margin="0,2">
+                                <Button DockPanel.Dock="Right" Content="Delete" FontSize="11"
+                                        Command="{Binding $parent[UserControl].((vm:PlannerViewModel)DataContext).DeleteTodoCommand}"
+                                        CommandParameter="{Binding}" />
+                                <CheckBox IsChecked="{Binding IsDone, Mode=OneWay}"
+                                          Command="{Binding $parent[UserControl].((vm:PlannerViewModel)DataContext).ToggleTodoCommand}"
+                                          CommandParameter="{Binding}">
+                                    <TextBlock>
+                                        <Run Text="{Binding Title}" /><Run Text="  " /><Run Text="{Binding Detail}"
+                                                                                           Foreground="Gray" />
+                                    </TextBlock>
+                                </CheckBox>
+                            </DockPanel>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </ScrollViewer>
+        </DockPanel>
+
+        <StackPanel Grid.Column="2" Spacing="10">
+            <TextBlock Text="D-Day" FontSize="18" FontWeight="SemiBold" />
+            <ItemsControl ItemsSource="{Binding Ddays}">
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate x:DataType="vm:DdayRow">
+                        <Border Margin="0,3" Padding="10,6" CornerRadius="6" Background="#14FFFFFF">
+                            <DockPanel>
+                                <Button DockPanel.Dock="Right" Content="×" Padding="6,0"
+                                        Command="{Binding $parent[UserControl].((vm:PlannerViewModel)DataContext).DeleteDdayCommand}"
+                                        CommandParameter="{Binding}" />
+                                <TextBlock DockPanel.Dock="Left" Text="{Binding Countdown}" FontWeight="Bold"
+                                           Width="70" VerticalAlignment="Center" />
+                                <StackPanel>
+                                    <TextBlock Text="{Binding Title}" />
+                                    <TextBlock Text="{Binding Date}" Opacity="0.5" FontSize="11" />
+                                </StackPanel>
+                            </DockPanel>
+                        </Border>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+            <TextBox PlaceholderText="Exam, deadline..." Text="{Binding NewDdayTitle}" />
+            <DockPanel>
+                <Button DockPanel.Dock="Right" Content="Add" Command="{Binding AddDdayCommand}" Margin="6,0,0,0" />
+                <CalendarDatePicker SelectedDate="{Binding NewDdayDate}" HorizontalAlignment="Stretch" />
+            </DockPanel>
+        </StackPanel>
+    </Grid>
+
+</UserControl>

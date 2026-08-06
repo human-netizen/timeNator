@@ -3,7 +3,10 @@
              x:Class="TimeNator.Desktop.App"
              xmlns:local="using:TimeNator.Desktop"
              RequestedThemeVariant="Default">
-             <!-- "Default" ThemeVariant follows system theme variant. "Dark" or "Light" are other available options. -->
+
+    <Application.Resources>
+        <x:Double x:Key="TabItemHeaderFontSize">17</x:Double>
+    </Application.Resources>
 
     <Application.DataTemplates>
         <local:ViewLocator />

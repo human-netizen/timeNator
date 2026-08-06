@@ -51,5 +51,18 @@ public interface IApiClient
     Task<List<DistractionEventResponse>> GetDistractionEventsAsync(DateTimeOffset from, DateTimeOffset to,
         CancellationToken cancellationToken = default);
 
+    Task<DailyReviewResponse> GetDailyReviewAsync(DateOnly date, TimeSpan utcOffset,
+        CancellationToken cancellationToken = default);
+    Task<TodoResponse> CreateTodoAsync(CreateTodoRequest request, CancellationToken cancellationToken = default);
+    Task<TodoResponse> UpdateTodoAsync(Guid id, UpdateTodoRequest request, CancellationToken cancellationToken = default);
+    Task DeleteTodoAsync(Guid id, CancellationToken cancellationToken = default);
+    Task<List<DdayResponse>> GetDdaysAsync(CancellationToken cancellationToken = default);
+    Task<DdayResponse> CreateDdayAsync(DdayRequest request, CancellationToken cancellationToken = default);
+    Task DeleteDdayAsync(Guid id, CancellationToken cancellationToken = default);
+    Task<List<TimetableResponse>> GetTimetableAsync(CancellationToken cancellationToken = default);
+    Task<TimetableResponse> CreateTimetableEntryAsync(TimetableRequest request,
+        CancellationToken cancellationToken = default);
+    Task DeleteTimetableEntryAsync(Guid id, CancellationToken cancellationToken = default);
+
     Task<List<LeaderboardEntry>> GetLeaderboardAsync(CancellationToken cancellationToken = default);
 }

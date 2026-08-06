@@ -51,6 +51,8 @@ public partial class App : Application
         services.AddTransient<GroupsViewModel>();
         services.AddTransient<LeaderboardViewModel>();
         services.AddTransient<FocusViewModel>();
+        services.AddTransient<PlannerViewModel>();
+        services.AddTransient<TimetableViewModel>();
         services.AddTransient<ManualEntryViewModel>();
         services.AddTransient<SettingsViewModel>();
         services.AddSingleton<SettingsStore>();

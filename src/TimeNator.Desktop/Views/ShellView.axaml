@@ -23,6 +23,8 @@
         <TabControl Padding="0" SelectedIndex="{Binding SelectedTab}">
             <TabItem Header="Timer" Content="{Binding Timer}" />
             <TabItem Header="History" Content="{Binding History}" />
+            <TabItem Header="Planner" Content="{Binding Planner}" />
+            <TabItem Header="Timetable" Content="{Binding Timetable}" />
             <TabItem Header="Groups" Content="{Binding Groups}" />
             <TabItem Header="Leaderboard" Content="{Binding Leaderboard}" />
             <TabItem Header="Focus" Content="{Binding Focus}" />
