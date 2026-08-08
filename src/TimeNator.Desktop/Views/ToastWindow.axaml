@@ -1,0 +1,23 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:services="using:TimeNator.Desktop.Services"
+        x:Class="TimeNator.Desktop.Views.ToastWindow"
+        x:DataType="services:Toast"
+        SystemDecorations="None"
+        Topmost="True"
+        ShowActivated="False"
+        ShowInTaskbar="False"
+        CanResize="False"
+        SizeToContent="WidthAndHeight"
+        Background="Transparent"
+        TransparencyLevelHint="Transparent">
+
+    <Border Width="340" Padding="14,10" CornerRadius="10" Background="#EE1E1E24" BorderBrush="#559B59B6"
+            BorderThickness="1">
+        <StackPanel Spacing="3">
+            <TextBlock Text="{Binding Title}" FontWeight="SemiBold" Foreground="White" />
+            <TextBlock Text="{Binding Body}" Foreground="#CCFFFFFF" TextWrapping="Wrap" />
+        </StackPanel>
+    </Border>
+
+</Window>

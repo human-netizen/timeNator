@@ -17,6 +17,10 @@ public record AppSettings
     public int PomodoroFocusMinutes { get; init; } = 25;
     public int PomodoroBreakMinutes { get; init; } = 5;
     public FocusStrictness FocusStrictness { get; init; } = FocusStrictness.Warn;
+    public bool NotifyPomodoro { get; init; } = true;
+    public bool NotifyIdle { get; init; } = true;
+    public bool NotifyFocus { get; init; } = true;
+    public bool NotifyGroups { get; init; } = true;
 }
 
 /// <summary>Per-machine preferences, kept as JSON next to the other local files.</summary>

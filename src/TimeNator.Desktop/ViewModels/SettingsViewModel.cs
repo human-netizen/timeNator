@@ -24,6 +24,10 @@ public partial class SettingsViewModel : ViewModelBase
         IdleThresholdMinutes = current.IdleThresholdMinutes;
         PomodoroFocusMinutes = current.PomodoroFocusMinutes;
         PomodoroBreakMinutes = current.PomodoroBreakMinutes;
+        NotifyPomodoro = current.NotifyPomodoro;
+        NotifyIdle = current.NotifyIdle;
+        NotifyFocus = current.NotifyFocus;
+        NotifyGroups = current.NotifyGroups;
     }
 
     public static IReadOnlyList<AvatarChoice> AvatarChoices { get; } =
@@ -43,6 +47,16 @@ public partial class SettingsViewModel : ViewModelBase
     [ObservableProperty] public partial decimal? IdleThresholdMinutes { get; set; }
     [ObservableProperty] public partial decimal? PomodoroFocusMinutes { get; set; }
     [ObservableProperty] public partial decimal? PomodoroBreakMinutes { get; set; }
+
+    [ObservableProperty] public partial bool NotifyPomodoro { get; set; }
+    [ObservableProperty] public partial bool NotifyIdle { get; set; }
+    [ObservableProperty] public partial bool NotifyFocus { get; set; }
+    [ObservableProperty] public partial bool NotifyGroups { get; set; }
+
+    partial void OnNotifyPomodoroChanged(bool value) => _store.Save(_store.Current with { NotifyPomodoro = value });
+    partial void OnNotifyIdleChanged(bool value) => _store.Save(_store.Current with { NotifyIdle = value });
+    partial void OnNotifyFocusChanged(bool value) => _store.Save(_store.Current with { NotifyFocus = value });
+    partial void OnNotifyGroupsChanged(bool value) => _store.Save(_store.Current with { NotifyGroups = value });
 
     public override async Task ActivateAsync()
     {

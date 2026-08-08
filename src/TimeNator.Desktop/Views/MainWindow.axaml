@@ -3,7 +3,7 @@
         xmlns:vm="using:TimeNator.Desktop.ViewModels"
         x:Class="TimeNator.Desktop.Views.MainWindow"
         x:DataType="vm:MainWindowViewModel"
-        Icon="/Assets/avalonia-logo.ico"
+        Icon="/Assets/timenator.ico"
         Width="1000" Height="680" MinWidth="720" MinHeight="480"
         Title="TimeNator">
 

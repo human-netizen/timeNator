@@ -22,6 +22,7 @@ public partial class TimerViewModel : ViewModelBase
     private readonly IWindowService _windows;
     private readonly IStudyHubClient _hub;
     private readonly FocusGuard _focus;
+    private readonly INotificationService _notifications;
     private readonly TimeProvider _clock;
     private readonly StudyTimer _timer;
     private readonly DispatcherTimer _tick;
@@ -33,7 +34,7 @@ public partial class TimerViewModel : ViewModelBase
 
     public TimerViewModel(SubjectCatalog catalog, SessionJournal journal, SessionUploader uploader,
         IIdleDetector idle, SettingsStore settings, IWindowService windows, IStudyHubClient hub,
-        FocusGuard focus, TimeProvider clock)
+        FocusGuard focus, INotificationService notifications, TimeProvider clock)
     {
         _journal = journal;
         _uploader = uploader;
@@ -43,6 +44,7 @@ public partial class TimerViewModel : ViewModelBase
         _windows = windows;
         _hub = hub;
         _focus = focus;
+        _notifications = notifications;
         _focus.Warning += app => Message = $"{app} is not on your allowed list. Back to work.";
         _timer = new StudyTimer(clock);
         Subjects = catalog.Subjects;
@@ -224,6 +226,7 @@ public partial class TimerViewModel : ViewModelBase
             _timer.Pause(_clock.GetUtcNow() - idle);
             Journal();
             Message = $"Paused after {(int)idle.TotalMinutes} min without input.";
+            _notifications.Show(NotificationKind.Idle, "Timer paused", Message);
         }
 
         switch (_pomodoro?.Update(_timer.Elapsed, _clock.GetUtcNow()))
@@ -232,11 +235,13 @@ public partial class TimerViewModel : ViewModelBase
                 _timer.Pause();
                 Journal();
                 Message = $"Focus block {_pomodoro.CompletedFocusBlocks} done. Take a break.";
+                _notifications.Show(NotificationKind.Pomodoro, "Break time", Message);
                 break;
             case PomodoroPhase.Focus:
                 _timer.Resume();
                 Journal();
                 Message = "Break over. Back to focus.";
+                _notifications.Show(NotificationKind.Pomodoro, "Break over", Message);
                 break;
         }
 
@@ -261,6 +266,7 @@ public partial class TimerViewModel : ViewModelBase
     {
         await StopAsync();
         Message = $"Countdown finished. {Message}";
+        _notifications.Show(NotificationKind.Pomodoro, "Countdown finished", Message);
     }
 
     private void Journal()

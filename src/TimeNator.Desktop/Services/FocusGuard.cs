@@ -14,6 +14,7 @@ public class FocusGuard(
     IApiClient api,
     SettingsStore settings,
     IWindowService windows,
+    INotificationService notifications,
     TimeProvider clock)
 {
     private DistractionTracker? _tracker;
@@ -78,7 +79,10 @@ public class FocusGuard(
             return;
 
         if (_strictness >= FocusStrictness.Warn)
+        {
             Warning?.Invoke(app.ProcessName);
+            notifications.Show(NotificationKind.Focus, "Stay focused", $"{app.ProcessName} is not on your allowed list.");
+        }
         if (_strictness == FocusStrictness.ForceFocus)
             windows.BringMainToFront();
     }

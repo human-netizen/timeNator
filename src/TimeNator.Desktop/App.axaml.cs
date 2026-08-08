@@ -57,6 +57,9 @@ public partial class App : Application
         services.AddTransient<SettingsViewModel>();
         services.AddSingleton<SettingsStore>();
         services.AddSingleton<ThemeService>();
+        services.AddSingleton<TrayService>();
+        services.AddSingleton<INotificationService, NotificationService>();
+        services.AddSingleton<GroupActivityNotifier>();
         services.AddSingleton<IWindowService, WindowService>();
         services.AddSingleton<IForegroundWatcher, ForegroundWatcher>();
         services.AddSingleton<FocusGuard>();
@@ -70,6 +73,8 @@ public partial class App : Application
         {
             var viewModel = provider.GetRequiredService<MainWindowViewModel>();
             desktop.MainWindow = new MainWindow { DataContext = viewModel };
+            provider.GetRequiredService<TrayService>().Install(this, desktop);
+            provider.GetRequiredService<GroupActivityNotifier>();
             // Posted so it runs inside the UI loop, where awaits resume on the UI thread.
             Dispatcher.UIThread.Post(() => viewModel.LoadCommand.Execute(null));
         }
