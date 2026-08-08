@@ -6,7 +6,38 @@
 
     <ScrollViewer>
         <StackPanel Margin="24" Spacing="16" Width="480" HorizontalAlignment="Left">
-            <TextBlock Text="Settings" FontSize="22" FontWeight="SemiBold" />
+            <TextBlock Text="Profile" FontSize="22" FontWeight="SemiBold" />
+            <StackPanel Spacing="8">
+                <TextBox PlaceholderText="Display name" Text="{Binding DisplayName}" MaxLength="50" />
+                <TextBox PlaceholderText="Status message" Text="{Binding StatusMessage}" MaxLength="200" />
+                <ItemsControl ItemsSource="{x:Static vm:SettingsViewModel.AvatarChoices}">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <WrapPanel />
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate x:DataType="vm:AvatarChoice">
+                            <Button Content="{Binding Glyph}" FontSize="22" Margin="0,0,6,6" Width="44" Height="44"
+                                    Command="{Binding $parent[UserControl].((vm:SettingsViewModel)DataContext).PickAvatarCommand}"
+                                    CommandParameter="{Binding}" />
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+                <StackPanel Orientation="Horizontal" Spacing="10">
+                    <TextBlock Text="Avatar:" VerticalAlignment="Center" />
+                    <TextBlock Text="{Binding Avatar.Glyph, FallbackValue=none}" FontSize="22" />
+                    <TextBlock Text="Theme:" VerticalAlignment="Center" Margin="16,0,0,0" />
+                    <ComboBox ItemsSource="{x:Static vm:SettingsViewModel.ThemeChoices}"
+                              SelectedItem="{Binding Theme}" Width="120" />
+                </StackPanel>
+                <StackPanel Orientation="Horizontal" Spacing="10">
+                    <Button Content="Save profile" Command="{Binding SaveProfileCommand}" />
+                    <TextBlock Text="{Binding ProfileMessage}" VerticalAlignment="Center" Opacity="0.7" />
+                </StackPanel>
+            </StackPanel>
+
+            <TextBlock Text="Timer" FontSize="22" FontWeight="SemiBold" Margin="0,12,0,0" />
 
             <StackPanel Spacing="6">
                 <TextBlock Text="Pause the timer after this many idle minutes" />

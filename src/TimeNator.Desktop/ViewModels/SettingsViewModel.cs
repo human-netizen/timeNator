@@ -1,24 +1,87 @@
 using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
 using TimeNator.Desktop.Services;
+using TimeNator.Shared;
+using TimeNator.Shared.Dtos;
 
 namespace TimeNator.Desktop.ViewModels;
 
+public record AvatarChoice(string Key, string Glyph);
+
+/// <summary>Profile (stored on the server) and machine preferences (stored locally).</summary>
 public partial class SettingsViewModel : ViewModelBase
 {
     private readonly SettingsStore _store;
+    private readonly IApiClient _api;
+    private readonly ThemeService _themes;
 
-    public SettingsViewModel(SettingsStore store)
+    public SettingsViewModel(SettingsStore store, IApiClient api, ThemeService themes)
     {
         _store = store;
+        _api = api;
+        _themes = themes;
         var current = store.Current;
         IdleThresholdMinutes = current.IdleThresholdMinutes;
         PomodoroFocusMinutes = current.PomodoroFocusMinutes;
         PomodoroBreakMinutes = current.PomodoroBreakMinutes;
     }
 
+    public static IReadOnlyList<AvatarChoice> AvatarChoices { get; } =
+        Avatars.Glyphs.Select(a => new AvatarChoice(a.Key, a.Value)).ToList();
+
+    public static IReadOnlyList<string> ThemeChoices => Themes.All;
+
+    /// <summary>Raised after the profile is saved, so the shell can refresh the name it shows.</summary>
+    public event Action<ProfileResponse>? ProfileSaved;
+
+    [ObservableProperty] public partial string DisplayName { get; set; } = "";
+    [ObservableProperty] public partial string StatusMessage { get; set; } = "";
+    [ObservableProperty] public partial AvatarChoice? Avatar { get; set; }
+    [ObservableProperty] public partial string Theme { get; set; } = Themes.System;
+    [ObservableProperty] public partial string? ProfileMessage { get; private set; }
+
     [ObservableProperty] public partial decimal? IdleThresholdMinutes { get; set; }
     [ObservableProperty] public partial decimal? PomodoroFocusMinutes { get; set; }
     [ObservableProperty] public partial decimal? PomodoroBreakMinutes { get; set; }
+
+    public override async Task ActivateAsync()
+    {
+        try
+        {
+            var profile = await _api.GetProfileAsync();
+            DisplayName = profile.DisplayName;
+            StatusMessage = profile.StatusMessage ?? "";
+            Avatar = AvatarChoices.FirstOrDefault(a => a.Key == profile.AvatarKey);
+            Theme = profile.ThemeKey ?? Themes.System;
+            _themes.Apply(Theme);
+            ProfileSaved?.Invoke(profile);
+        }
+        catch (ApiException ex)
+        {
+            ProfileMessage = ex.Message;
+        }
+    }
+
+    [RelayCommand]
+    private async Task SaveProfileAsync()
+    {
+        try
+        {
+            var saved = await _api.UpdateProfileAsync(
+                new UpdateProfileRequest(DisplayName.Trim(), StatusMessage, Avatar?.Key, Theme));
+            ProfileMessage = "Saved.";
+            ProfileSaved?.Invoke(saved);
+        }
+        catch (ApiException ex)
+        {
+            ProfileMessage = ex.Message;
+        }
+    }
+
+    [RelayCommand]
+    private void PickAvatar(AvatarChoice choice) => Avatar = choice;
+
+    partial void OnThemeChanged(string value) => _themes.Apply(value);
 
     partial void OnIdleThresholdMinutesChanged(decimal? value)
     {

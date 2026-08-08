@@ -64,5 +64,8 @@ public interface IApiClient
         CancellationToken cancellationToken = default);
     Task DeleteTimetableEntryAsync(Guid id, CancellationToken cancellationToken = default);
 
+    Task<ProfileResponse> GetProfileAsync(CancellationToken cancellationToken = default);
+    Task<ProfileResponse> UpdateProfileAsync(UpdateProfileRequest request, CancellationToken cancellationToken = default);
+
     Task<List<LeaderboardEntry>> GetLeaderboardAsync(CancellationToken cancellationToken = default);
 }

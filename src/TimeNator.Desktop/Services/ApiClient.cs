@@ -148,6 +148,13 @@ public class ApiClient(HttpClient http) : IApiClient
     public Task DeleteTimetableEntryAsync(Guid id, CancellationToken cancellationToken = default) =>
         SendAsync(HttpMethod.Delete, $"api/timetable/{id}", null, cancellationToken);
 
+    public Task<ProfileResponse> GetProfileAsync(CancellationToken cancellationToken = default) =>
+        GetAsync<ProfileResponse>("api/me", cancellationToken);
+
+    public Task<ProfileResponse> UpdateProfileAsync(UpdateProfileRequest request,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<ProfileResponse>(HttpMethod.Put, "api/me", request, cancellationToken);
+
     public Task<List<LeaderboardEntry>> GetLeaderboardAsync(CancellationToken cancellationToken = default) =>
         GetAsync<List<LeaderboardEntry>>("api/leaderboard", cancellationToken);
 

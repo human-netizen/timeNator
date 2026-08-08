@@ -86,6 +86,23 @@ public class AuthTests(ApiFactory factory)
     }
 
     [Fact]
+    public async Task Profile_updates_and_rejects_unknown_avatars()
+    {
+        var client = await factory.CreateUserClientAsync();
+
+        var bad = await client.PutAsJsonAsync("/api/me", new UpdateProfileRequest("Ada", null, "dragon", null));
+        var good = await client.PutAsJsonAsync("/api/me",
+            new UpdateProfileRequest(" Ada L. ", "Revising calculus", "owl", "dark"));
+        var profile = await client.GetFromJsonAsync<ProfileResponse>("/api/me");
+
+        Assert.Equal(HttpStatusCode.BadRequest, bad.StatusCode);
+        Assert.Equal(HttpStatusCode.OK, good.StatusCode);
+        Assert.Equal("Ada L.", profile!.DisplayName);
+        Assert.Equal("owl", profile.AvatarKey);
+        Assert.Equal("dark", profile.ThemeKey);
+    }
+
+    [Fact]
     public async Task Protected_route_requires_a_token()
     {
         var response = await factory.CreateClient().GetAsync("/api/subjects");

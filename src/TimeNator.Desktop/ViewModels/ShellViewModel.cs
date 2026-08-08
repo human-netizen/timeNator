@@ -1,6 +1,7 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using TimeNator.Desktop.Services;
+using TimeNator.Shared;
 
 namespace TimeNator.Desktop.ViewModels;
 
@@ -19,7 +20,8 @@ public partial class ShellViewModel(
     TimetableViewModel timetable,
     SettingsViewModel settings) : ViewModelBase
 {
-    public string DisplayName => auth.DisplayName ?? "";
+    [ObservableProperty] public partial string DisplayName { get; private set; } = auth.DisplayName ?? "";
+    [ObservableProperty] public partial string AvatarGlyph { get; private set; } = Avatars.GlyphFor(null);
 
     public TimerViewModel Timer { get; } = timer;
     public BackgroundAudioViewModel Audio { get; } = audio;
@@ -41,6 +43,12 @@ public partial class ShellViewModel(
 
     public override async Task ActivateAsync()
     {
+        Settings.ProfileSaved += profile =>
+        {
+            DisplayName = profile.DisplayName;
+            AvatarGlyph = Avatars.GlyphFor(profile.AvatarKey);
+        };
+        await Settings.ActivateAsync();
         await hub.ConnectAsync();
         await Timer.ActivateAsync();
         await Subjects.LoadCommand.ExecuteAsync(null);
