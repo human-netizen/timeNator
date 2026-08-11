@@ -60,6 +60,7 @@ public partial class App : Application
         services.AddSingleton<TrayService>();
         services.AddSingleton<INotificationService, NotificationService>();
         services.AddSingleton<GroupActivityNotifier>();
+        services.AddSingleton<HotkeyService>();
         services.AddSingleton<IWindowService, WindowService>();
         services.AddSingleton<IForegroundWatcher, ForegroundWatcher>();
         services.AddSingleton<FocusGuard>();
@@ -75,6 +76,7 @@ public partial class App : Application
             desktop.MainWindow = new MainWindow { DataContext = viewModel };
             provider.GetRequiredService<TrayService>().Install(this, desktop);
             provider.GetRequiredService<GroupActivityNotifier>();
+            provider.GetRequiredService<HotkeyService>().Install(desktop.MainWindow);
             // Posted so it runs inside the UI loop, where awaits resume on the UI thread.
             Dispatcher.UIThread.Post(() => viewModel.LoadCommand.Execute(null));
         }

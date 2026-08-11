@@ -34,7 +34,7 @@ public partial class TimerViewModel : ViewModelBase
 
     public TimerViewModel(SubjectCatalog catalog, SessionJournal journal, SessionUploader uploader,
         IIdleDetector idle, SettingsStore settings, IWindowService windows, IStudyHubClient hub,
-        FocusGuard focus, INotificationService notifications, TimeProvider clock)
+        FocusGuard focus, INotificationService notifications, HotkeyService hotkeys, TimeProvider clock)
     {
         _journal = journal;
         _uploader = uploader;
@@ -45,6 +45,8 @@ public partial class TimerViewModel : ViewModelBase
         _hub = hub;
         _focus = focus;
         _notifications = notifications;
+        hotkeys.StartStopPressed += OnStartStopHotkey;
+        hotkeys.PauseResumePressed += OnPauseResumeHotkey;
         _focus.Warning += app => Message = $"{app} is not on your allowed list. Back to work.";
         _timer = new StudyTimer(clock);
         Subjects = catalog.Subjects;
@@ -184,6 +186,24 @@ public partial class TimerViewModel : ViewModelBase
     }
 
     private bool CanStop() => State != TimerState.Idle;
+
+    private void OnStartStopHotkey()
+    {
+        if (StopCommand.CanExecute(null))
+            StopCommand.Execute(null);
+        else if (StartCommand.CanExecute(null))
+            StartCommand.Execute(null);
+        else
+            _notifications.Show(NotificationKind.Pomodoro, "Pick a subject", "Choose a subject before starting.");
+    }
+
+    private void OnPauseResumeHotkey()
+    {
+        if (State == TimerState.Running)
+            Pause();
+        else if (State == TimerState.Paused)
+            Resume();
+    }
 
     [RelayCommand]
     private void OpenDeskMode() => _windows.ShowDeskMode(this);
