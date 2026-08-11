@@ -1,4 +1,5 @@
 using Avalonia;
+using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
 using Avalonia.Threading;
@@ -61,6 +62,7 @@ public partial class App : Application
         services.AddSingleton<INotificationService, NotificationService>();
         services.AddSingleton<GroupActivityNotifier>();
         services.AddSingleton<HotkeyService>();
+        services.AddSingleton<LaunchAtLogin>();
         services.AddSingleton<IWindowService, WindowService>();
         services.AddSingleton<IForegroundWatcher, ForegroundWatcher>();
         services.AddSingleton<FocusGuard>();
@@ -77,10 +79,22 @@ public partial class App : Application
             provider.GetRequiredService<TrayService>().Install(this, desktop);
             provider.GetRequiredService<GroupActivityNotifier>();
             provider.GetRequiredService<HotkeyService>().Install(desktop.MainWindow);
+            if (desktop.Args?.Contains(LaunchAtLogin.MinimizedArgument) == true)
+                StartInTray(desktop.MainWindow);
             // Posted so it runs inside the UI loop, where awaits resume on the UI thread.
             Dispatcher.UIThread.Post(() => viewModel.LoadCommand.Execute(null));
         }
 
         base.OnFrameworkInitializationCompleted();
+    }
+
+    /// <summary>
+    /// Launched at sign-in: the window must still open once so it has a handle for the
+    /// global hotkeys, so it opens minimized and hides straight away.
+    /// </summary>
+    private static void StartInTray(Window window)
+    {
+        window.WindowState = WindowState.Minimized;
+        window.Opened += (_, _) => window.Hide();
     }
 }

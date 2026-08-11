@@ -14,12 +14,14 @@ public partial class SettingsViewModel : ViewModelBase
     private readonly SettingsStore _store;
     private readonly IApiClient _api;
     private readonly ThemeService _themes;
+    private readonly LaunchAtLogin _launchAtLogin;
 
-    public SettingsViewModel(SettingsStore store, IApiClient api, ThemeService themes)
+    public SettingsViewModel(SettingsStore store, IApiClient api, ThemeService themes, LaunchAtLogin launchAtLogin)
     {
         _store = store;
         _api = api;
         _themes = themes;
+        _launchAtLogin = launchAtLogin;
         var current = store.Current;
         IdleThresholdMinutes = current.IdleThresholdMinutes;
         PomodoroFocusMinutes = current.PomodoroFocusMinutes;
@@ -28,6 +30,7 @@ public partial class SettingsViewModel : ViewModelBase
         NotifyIdle = current.NotifyIdle;
         NotifyFocus = current.NotifyFocus;
         NotifyGroups = current.NotifyGroups;
+        StartWithWindows = launchAtLogin.IsEnabled;
     }
 
     public static IReadOnlyList<AvatarChoice> AvatarChoices { get; } =
@@ -53,10 +56,13 @@ public partial class SettingsViewModel : ViewModelBase
     [ObservableProperty] public partial bool NotifyFocus { get; set; }
     [ObservableProperty] public partial bool NotifyGroups { get; set; }
 
+    [ObservableProperty] public partial bool StartWithWindows { get; set; }
+
     partial void OnNotifyPomodoroChanged(bool value) => _store.Save(_store.Current with { NotifyPomodoro = value });
     partial void OnNotifyIdleChanged(bool value) => _store.Save(_store.Current with { NotifyIdle = value });
     partial void OnNotifyFocusChanged(bool value) => _store.Save(_store.Current with { NotifyFocus = value });
     partial void OnNotifyGroupsChanged(bool value) => _store.Save(_store.Current with { NotifyGroups = value });
+    partial void OnStartWithWindowsChanged(bool value) => _launchAtLogin.SetEnabled(value);
 
     public override async Task ActivateAsync()
     {

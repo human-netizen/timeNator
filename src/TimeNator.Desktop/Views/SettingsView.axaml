@@ -62,6 +62,10 @@
                 <CheckBox Content="Focus warnings" IsChecked="{Binding NotifyFocus}" />
                 <CheckBox Content="Group members starting to study and chatting" IsChecked="{Binding NotifyGroups}" />
             </StackPanel>
+
+            <TextBlock Text="Startup" FontSize="22" FontWeight="SemiBold" Margin="0,12,0,0" />
+            <CheckBox Content="Start TimeNator in the tray when I sign in to Windows"
+                      IsChecked="{Binding StartWithWindows}" />
         </StackPanel>
     </ScrollViewer>
 
