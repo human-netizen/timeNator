@@ -3,7 +3,7 @@
         xmlns:services="using:TimeNator.Desktop.Services"
         x:Class="TimeNator.Desktop.Views.ToastWindow"
         x:DataType="services:Toast"
-        SystemDecorations="None"
+        WindowDecorations="None"
         Topmost="True"
         ShowActivated="False"
         ShowInTaskbar="False"

@@ -115,6 +115,18 @@ must be running:
 dotnet test
 ```
 
+## Releases
+
+The client publishes as one self-contained executable for 64-bit Windows, so
+the target machine needs no .NET runtime:
+
+```bash
+dotnet publish src/TimeNator.Desktop -p:PublishProfile=win-x64
+```
+
+Pushing a tag such as `v1.0.0` runs the same publish on GitHub Actions and
+attaches the executable to a GitHub release.
+
 ## Design decisions
 
 **The client owns the clock.** A session is timed entirely on the desktop, and

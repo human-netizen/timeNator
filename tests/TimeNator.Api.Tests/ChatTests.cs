@@ -40,9 +40,9 @@ public class ChatTests(ApiFactory factory)
         for (var i = 0; i < 55; i++)
             await hub.InvokeAsync("SendMessage", group.Id, $"message {i}");
 
-        var first = await alice.Client.GetFromJsonAsync<List<GroupMessageItem>>($"/api/groups/{group.Id}/messages");
+        var first = (await alice.Client.GetFromJsonAsync<List<GroupMessageItem>>($"/api/groups/{group.Id}/messages"))!;
         var second = await alice.Client.GetFromJsonAsync<List<GroupMessageItem>>(
-            $"/api/groups/{group.Id}/messages?before={first!.Last().Id}");
+            $"/api/groups/{group.Id}/messages?before={first.Last().Id}");
 
         Assert.Equal(50, first.Count);
         Assert.Equal("message 54", first[0].Body);

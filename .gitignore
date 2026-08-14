@@ -193,6 +193,8 @@ publish/
 # Note: Comment the next line if you want to checkin your web deploy settings,
 # but database connection strings (with potential passwords) will be unencrypted
 *.pubxml
+# The desktop profile holds no secrets.
+!src/TimeNator.Desktop/Properties/PublishProfiles/win-x64.pubxml
 *.publishproj
 
 # Microsoft Azure Web App publish settings. Comment the next line if you want to
@@ -483,8 +485,7 @@ $RECYCLE.BIN/
 
 .idea/
 
-# Planning and working notes stay local. README.md is the only tracked
-# Markdown file.
+# Personal notes stay out of the repository.
 *.md
 !README.md
 
